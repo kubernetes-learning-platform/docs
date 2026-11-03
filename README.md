@@ -27,11 +27,11 @@ GitHub has no nested repos, so the organization is the container and **this repo
 | Repo | Purpose | Owner | Status |
 |---|---|---|---|
 | **[docs](https://github.com/kubernetes-learning-platform/docs)** | This documentation hub | Filip (everyone contributes) | ✅ |
-| **contracts** | Protobuf schema for the whole system → NuGet + npm packages | Filip | planned |
-| **sandbox** | `envmgr` (host daemon), `harness` (in-VM agent), SandboxClient library, VM base image, lesson images | Filip | planned |
-| **api** | ASP.NET Core backend + the Agent library + curated lessons | Person 2 (Agent + lessons: Filip) | planned |
-| **web** | Next.js frontend: canvas, chat, terminal, inspector, replay | Person 3 | planned |
-| **platform** | Shared CI workflows, lint configs, deploy + dev Compose files | Filip | planned |
+| **[contracts](https://github.com/kubernetes-learning-platform/contracts)** | Protobuf schema for the whole system → NuGet + npm packages | Filip | README only |
+| **[sandbox](https://github.com/kubernetes-learning-platform/sandbox)** | `envmgr` (host daemon), `harness` (in-VM agent), SandboxClient library, VM base image, lesson images | Filip | README only |
+| **[api](https://github.com/kubernetes-learning-platform/api)** | ASP.NET Core backend + the Agent library + curated lessons | Person 2 (Agent + lessons: Filip) | README only |
+| **[web](https://github.com/kubernetes-learning-platform/web)** | Next.js frontend: canvas, chat, terminal, inspector, replay | Person 3 | README only |
+| **[platform](https://github.com/kubernetes-learning-platform/platform)** | Shared CI workflows, lint configs, deploy + dev Compose files | Filip | README only |
 
 ```mermaid
 flowchart LR
@@ -144,7 +144,7 @@ kubernetes-learning/                          # local workspace
 
 ## 🚀 Getting started
 
-> Only `docs` exists so far. The other repos get created in M1.
+> Every repo exists, but the code repos only hold a README so far. Code lands in M1.
 
 ```bash
 mkdir kubernetes-learning && cd kubernetes-learning

@@ -64,7 +64,7 @@ flowchart LR
     sandbox["sandbox<br/>envmgr, harness, VM image"]
     api["api<br/>backend + agent"]
     web["web<br/>Next.js"]
-    platform["platform<br/>CI, lint, deploy, docs"]
+    platform["platform<br/>CI, lint, deploy"]
 
     contracts -->|NuGet| sandbox
     contracts -->|NuGet| api
