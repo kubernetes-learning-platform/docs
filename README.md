@@ -163,6 +163,15 @@ Nobody needs KVM for day-to-day work. `envmgr` has a **Docker provider** for mac
 
 ---
 
+## 📏 Conventions
+
+- **Commits:** strict [Conventional Commits](https://www.conventionalcommits.org/), one line, e.g. `feat: add warm pool`. No body, no co-author trailers.
+- **PRs:** the title uses the same format. Every repo only allows squash merges, and the squash commit is the PR title, so `main` gets one clean line per change. Branches are deleted after merging.
+
+More in [platform → Conventions](https://github.com/kubernetes-learning-platform/platform#-conventions).
+
+---
+
 ## 👥 Team
 
 | | Owns |
