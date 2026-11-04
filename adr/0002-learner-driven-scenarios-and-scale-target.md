@@ -195,7 +195,3 @@ The helper moves later, because the product must work without it.
 - The home PC's RAM, which sets `Sandbox__MaxConcurrent` for the demo.
 - How long to keep `session_events` for finished sessions.
 - Anything the course itself requires.
-
-## To update once accepted
-
-ARCHITECTURE (§0, §1, §2, §4–§7, §9–§11), FEATURES, the docs README, PROJECT-BRIEF's superseded notes, the `contracts`, `sandbox`, `api`, `web` and `platform` READMEs, and every repo's `.github/copilot-instructions.md`.

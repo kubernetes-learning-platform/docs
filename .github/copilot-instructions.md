@@ -1,10 +1,10 @@
 # Copilot instructions: docs
 
-This is the documentation hub of kubernetes-learning-platform, an AI tutor with a live Kubernetes lab. `ARCHITECTURE.md` is the plan (repos, services, contracts, flows, milestones, risks). `FEATURES.md` explains each feature twice, once from the user's view and once technically. `PROJECT-BRIEF.md` is the original brief. Where they disagree, `ARCHITECTURE.md` wins.
+This is the documentation hub of kubernetes-learning-platform, a live Kubernetes lab with an optional AI helper. `ARCHITECTURE.md` is the plan (repos, services, contracts, flows, milestones, risks). `FEATURES.md` explains each feature twice, once from the user's view and once technically. `adr/` holds the decision records. `PROJECT-BRIEF.md` is the original brief. Where they disagree, the ADRs and `ARCHITECTURE.md` win.
 
 ## When reviewing, focus on
 - **Decision labels.** Statements are tagged **DECIDED**, **DEFAULT**, **OPEN** or **CALL**. Keep the labels. Flag a change that quietly turns an OPEN item into a decision without saying so in the PR.
-- **Consistency across documents.** Repo names (`docs`, `contracts`, `sandbox`, `api`, `web`, `platform`), package names (`KubernetesLearning.*`, `@kubernetes-learning-platform/contracts`), the proto package (`kubernetes_learning.v1`), controller and message names should match between README, ARCHITECTURE and FEATURES.
+- **Consistency across documents.** Repo names (`docs`, `contracts`, `sandbox`, `api`, `web`, `platform`), package names (`KubernetesLearning.*`, `@kubernetes-learning-platform/contracts`), the proto package (`kubernetes_learning.v1`), controller and message names should match between README, ARCHITECTURE, FEATURES and the ADRs.
 - **Links and anchors.** Relative links and `#section` anchors still resolve after headings change.
 - **Diagrams.** Mermaid diagrams stay small and readable (a handful of boxes). Detail belongs in tables and folder trees.
 - **People.** Teammates are referred to as Filip, Person 2 and Person 3.

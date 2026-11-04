@@ -7,6 +7,8 @@
 > **This is the original brief.** Where it and [ARCHITECTURE.md](ARCHITECTURE.md) disagree (repo layout in §12, open questions answered since), ARCHITECTURE.md wins.
 >
 > **Hosting and the harness transport changed on 2026-11-04** ([ADR 0001](adr/0001-hosting-and-harness-transport.md)): the stack runs on a Hetzner box, sandboxes are Proxmox VMs on a PC at home, all machines (including the demo laptop) are joined by a WireGuard mesh, and the harness speaks WebSocket instead of vsock. Sections §1, §2, §4, §5, §10 and §14 below are marked where this applies; the original text is kept for history.
+>
+> **The product shape changed on 2026-11-04** ([ADR 0002](adr/0002-learner-driven-scenarios-and-scale-target.md)): the learner drives, the agent is an optional helper that acts when asked, scenarios replace lessons, and RabbitMQ handles sandbox start and teardown only. Sections §1, §6, §7, §11 and the milestones below are marked where this applies; the original text is kept for history.
 
 ---
 
@@ -16,6 +18,8 @@ An AI-powered, interactive **Kubernetes learning platform**. A user asks an agen
 
 One-liner: *an AI tutor combined with a live Kubernetes lab, where every explanation is backed by real infrastructure you can see, poke and break.*
 
+*(Superseded in part by ADR 0002: the learner drives, and the agent only acts when asked. It's an optional helper, not the main actor.)*
+
 ### Context
 - University team project (generic team-project course). The deadline is far off, but the team wants to build ASAP. **DECIDED**
 - **Demo/presentation only.** Not public, single-host deployment on one team member's PC. **DECIDED** *(Superseded by ADR 0001: still demo-only and not public, but split across a Hetzner box and a Proxmox box on a WireGuard mesh.)*
@@ -24,7 +28,7 @@ One-liner: *an AI tutor combined with a live Kubernetes lab, where every explana
 - **Kubernetes only.** **DECIDED**
 - **Non-goals:** Docker Swarm, CI/CD as a teaching topic, native mobile apps (a responsive web app covers phones). **DECIDED**
 - Separate "provision a nested VM" CLI: **dropped**. Node management is agent tools backed by k3d. **DECIDED**
-- Job/message queue: **none**. **DECIDED** (see §11)
+- Job/message queue: **none**. **DECIDED** (see §11) *(Superseded by ADR 0002 for sandbox start and teardown only.)*
 - Local container registry / pull-through cache: **none**. **DECIDED** (see §10)
 
 ---
@@ -196,6 +200,8 @@ message ViewIntent {
 
 ## 6. The agent
 
+> **Superseded in part by [ADR 0002](adr/0002-learner-driven-scenarios-and-scale-target.md):** the helper is optional and only acts when asked, with no control lock or pause/resume. Lessons become scenarios that work with no LLM. See [ARCHITECTURE §6.1](ARCHITECTURE.md#61-who-drives-decided-adr-0002).
+
 - The **agent loop runs in `api`**, with an LLM that supports tool use. **DECIDED** (architecture)
 - **Provider: OPEN.**
 - **Hard token cap per session.** **DEFAULT**
@@ -311,7 +317,7 @@ As a container it would need `--privileged` plus host networking anyway, which m
 
 ## 11. Rejected alternatives (don't reintroduce without discussion)
 
-- **Job queue (Postgres SKIP LOCKED / NATS / RabbitMQ):** rejected. The live event stream is per-session, ordered and latency-sensitive, so it uses direct streaming. Provisioning is handled directly by envmgr.
+- **Job queue (Postgres SKIP LOCKED / NATS / RabbitMQ):** rejected. The live event stream is per-session, ordered and latency-sensitive, so it uses direct streaming. Provisioning is handled directly by envmgr. *(Superseded by ADR 0002 for sandbox start and teardown only: RabbitMQ now carries those requests. The reasoning still holds for the live event stream.)*
 - **Local registry / pull-through cache:** rejected in favour of pre-baking images into the VM base image and building BYO images inside the VM.
 - **Nested VMs as cluster nodes:** rejected for the MVP (requires nested virtualization, slower). Containers-as-nodes via k3d instead.
 - **Running sandboxes as k3d-in-pods on a shared cluster:** rejected. A lesson that kills nodes or fills disks must never touch real infrastructure.
@@ -349,6 +355,8 @@ Target **.NET 10** for all .NET projects (Native AOT for the harness; avoid refl
 ---
 
 ## 13. Roadmap (each milestone is demoable)
+
+> **Superseded by [ADR 0002](adr/0002-learner-driven-scenarios-and-scale-target.md):** see [ARCHITECTURE §9](ARCHITECTURE.md#9-milestones-by-person) for the current milestones. The helper moves to M4, because the product must work without it.
 
 | Milestone | Scope |
 |---|---|

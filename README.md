@@ -1,8 +1,8 @@
 # kubernetes-learning-platform
 
-> **An AI tutor combined with a live Kubernetes lab**, where every explanation is backed by real infrastructure you can see, poke and break.
+> **A live Kubernetes lab with an optional AI helper**, where you learn by doing on real infrastructure you can see, poke and break.
 
-You ask the agent to explain or demonstrate a Kubernetes concept: rolling updates, scheduling, service discovery, a `CrashLoopBackOff`. The agent then builds and operates a **real, disposable 3-node cluster** in an isolated VM. It deploys apps, breaks things on purpose and troubleshoots them, while a **live visual interface** shows every change as it happens. You can take control at any point and fix things yourself.
+One click gives you a **real, disposable 3-node cluster** in an isolated VM and a real terminal, with full `kubectl` freedom. You work on your own or through a **scenario** with automatic checks, such as fixing a broken ingress, while a **live visual interface** shows every change as it happens. If you want, an **AI helper** can explain what's going on and demonstrate a step, showing every command and asking you how to continue.
 
 University team project · demo-only · a Hetzner box + a Proxmox box at home on a WireGuard mesh · *"kubernetes-learning" is a placeholder name*
 
@@ -15,7 +15,7 @@ University team project · demo-only · a Hetzner box + a Proxmox box at home on
 | [ARCHITECTURE.md](ARCHITECTURE.md) | **Start here.** Repos, services, controllers, contracts, key flows, per-repo folder trees, CI/CD, milestones, risks |
 | [FEATURES.md](FEATURES.md) | Every feature, explained twice: what the user sees and how it works technically |
 | [PROJECT-BRIEF.md](PROJECT-BRIEF.md) | The original brief: product intent, sandbox design, agent tools, rejected alternatives |
-| [adr/](adr/) | Architecture decision records, one per decision. [0001](adr/0001-hosting-and-harness-transport.md): hosting over a WireGuard mesh, Proxmox sandboxes, WebSocket-only harness |
+| [adr/](adr/) | Architecture decision records, one per decision. [0001](adr/0001-hosting-and-harness-transport.md): hosting over a WireGuard mesh, Proxmox sandboxes, WebSocket-only harness. [0002](adr/0002-learner-driven-scenarios-and-scale-target.md): learner-driven scenarios, the optional helper, RabbitMQ, the 30-sandbox design target |
 
 Decision labels used throughout: **DECIDED** (agreed) · **DEFAULT** (proposed, not objected to) · **OPEN** (not decided) · **CALL** (chosen during planning, change freely).
 
@@ -29,10 +29,12 @@ GitHub has no nested repos, so the organization is the container and **this repo
 |---|---|---|---|
 | **[docs](https://github.com/kubernetes-learning-platform/docs)** | This documentation hub | Filip (everyone contributes) | ✅ |
 | **[contracts](https://github.com/kubernetes-learning-platform/contracts)** | Protobuf schema for the whole system → NuGet + npm packages | Filip | README only |
-| **[sandbox](https://github.com/kubernetes-learning-platform/sandbox)** | `envmgr` (daemon on the Proxmox box), `harness` (in-VM agent), SandboxClient library, Proxmox VM template, lesson images | Filip | README only |
-| **[api](https://github.com/kubernetes-learning-platform/api)** | ASP.NET Core backend + the Agent library + curated lessons | Person 2 (Agent + lessons: Filip) | README only |
-| **[web](https://github.com/kubernetes-learning-platform/web)** | Next.js frontend: canvas, chat, terminal, inspector, replay | Person 3 | README only |
-| **[platform](https://github.com/kubernetes-learning-platform/platform)** | Shared CI workflows, lint configs, infrastructure code, deploy files per machine, dev Compose | Filip | README only |
+| **[sandbox](https://github.com/kubernetes-learning-platform/sandbox)** | `envmgr` (daemon on the Proxmox box), `harness` (in-VM agent), SandboxClient library, Proxmox VM template, scenario images | Filip | README only |
+| **[api](https://github.com/kubernetes-learning-platform/api)** | ASP.NET Core backend + the Scenarios and Agent libraries | Person 2 (Scenarios + Agent: Filip) | README only |
+| **[web](https://github.com/kubernetes-learning-platform/web)** | Next.js frontend: canvas, scenarios, terminal, helper chat, inspector, replay | Person 3 | README only |
+| **[platform](https://github.com/kubernetes-learning-platform/platform)** | Shared CI workflows, lint configs, infrastructure code, deploy files per machine (including RabbitMQ), dev Compose | Filip | README only |
+
+A seventh repo, `scenarios`, gets created once the flow is up and working. Until then, the first scenario lives in `api`.
 
 ```mermaid
 flowchart LR
@@ -62,7 +64,8 @@ flowchart LR
         proxy["proxy<br/>Caddy"]
         web["web<br/>Next.js"]
         api["api<br/>ASP.NET Core + agent"]
-        db[("Postgres<br/>users, sessions, event log")]
+        db[("Postgres<br/>users, sessions, progress, event log")]
+        mq["RabbitMQ<br/>start + teardown"]
     end
 
     subgraph home["Proxmox box (home)"]
@@ -77,17 +80,20 @@ flowchart LR
     proxy --> web
     proxy -->|"REST + WebSocket (protobuf)"| api
     api --> db
+    api -->|"start + teardown requests"| mq
     api -->|HTTPS| llm
     api -->|"gRPC over WireGuard"| envmgr
+    envmgr -->|"AMQP over WireGuard"| mq
     harness -->|"WebSocket, isolated bridge"| envmgr
     harness -->|"kubectl, docker, watches"| k3d
 ```
 
-**Three ideas shape everything:**
+**Four ideas shape everything:**
 
-1. **The agent's brain lives in the backend; the VM gets a thin executor.** The LLM loop runs in `api`. The `harness` only executes commands and observes, so API keys never enter the VM, and a VM can die without losing the conversation.
-2. **The view never trusts the narrator.** The canvas is drawn *only* from real cluster state (the harness watches Kubernetes). The agent can only move the camera (`focus`, `highlight`, `annotate`). If the agent says "done" while a pod is crashing, you see the crash.
-3. **Faults are typed tools, not ad-hoc shell commands.** `kill_node`, `partition`, `bad_image` are recorded and reversible, so the UI knows exactly what was broken.
+1. **The learner drives.** The terminal is yours by default, and scenarios and their checks work with no LLM. The helper only acts when you ask, shows every command, and then asks you how to continue.
+2. **The helper's brain lives in the backend; the VM gets a thin executor.** The LLM loop runs in `api`. The `harness` only executes commands and observes, so API keys never enter the VM, and a VM can die without losing the conversation.
+3. **The view never trusts the narrator.** The canvas is drawn *only* from real cluster state (the harness watches Kubernetes). The helper can only move the camera (`focus`, `highlight`, `annotate`). If it says "done" while a pod is crashing, you see the crash.
+4. **Faults are typed tools, not ad-hoc shell commands.** `kill_node`, `partition`, `bad_image` are recorded and reversible, so the UI knows exactly what was broken.
 
 ### Machines
 
@@ -95,7 +101,7 @@ All three are on one **WireGuard mesh**. Nothing is public: the app is only reac
 
 | Machine | Runs | Mesh address |
 |---|---|---|
-| **Hetzner box** | Docker Compose: Caddy, `web`, `api`, Postgres. The only peer with a public endpoint (WireGuard + SSH only). | `10.66.0.1` |
+| **Hetzner box** | Docker Compose: Caddy, `web`, `api`, Postgres, RabbitMQ. The only peer with a public endpoint (WireGuard + SSH only). | `10.66.0.1` |
 | **Proxmox box** (home) | Proxmox VE, `envmgr`, one sandbox VM per session on an isolated bridge | `10.66.0.2` |
 | **Demo laptop** | The browser on the projector | `10.66.0.3` |
 
@@ -104,10 +110,11 @@ All three are on one **WireGuard mesh**. Nothing is public: the app is only reac
 | Service | Tech | Runs | Entry points |
 |---|---|---|---|
 | **web** | Next.js (React Flow, xterm.js, Monaco) | Docker Compose on the Hetzner box | Routes: `/`, `/login`, `/session/[id]`, `/session/[id]/replay` |
-| **api** | ASP.NET Core, .NET 10 | Docker Compose on the Hetzner box | **4 controllers**: `Auth`, `Sessions`, `Lessons`, `Events` · WebSocket `/ws/sessions/{id}` |
-| **envmgr** | .NET 10 daemon | systemd on the Proxmox host | **1 gRPC service** on the mesh: `Create` / `Destroy` / `Get` / `List` / `Watch` sandbox + `Connect` relay · harness WebSocket on the sandbox bridge |
-| **harness** | .NET 10 Native AOT | inside every sandbox VM | Frame router → `Exec`, `Pty`, `File`, `Fault` handlers + Kubernetes/Docker watchers |
-| Postgres | off the shelf | Docker Compose on the Hetzner box | Users, sessions, append-only event log |
+| **api** | ASP.NET Core, .NET 10 | Docker Compose on the Hetzner box | **4 controllers**: `Auth`, `Sessions`, `Scenarios`, `Events` · WebSocket `/ws/sessions/{id}` |
+| **envmgr** | .NET 10 daemon | systemd on the Proxmox host | **1 gRPC service** on the mesh: `Create` / `Destroy` / `Get` / `List` / `Watch` sandbox + `Connect` relay · harness WebSocket on the sandbox bridge · consumes start and teardown requests from RabbitMQ |
+| **harness** | .NET 10 Native AOT | inside every sandbox VM | Frame router → `Exec`, `Pty`, `File`, `Fault`, `Check` handlers + Kubernetes/Docker watchers |
+| Postgres | off the shelf | Docker Compose on the Hetzner box | Users, sessions, progress, append-only event log |
+| RabbitMQ | off the shelf | Docker Compose on the Hetzner box | Sandbox start and teardown requests only; live streams stay direct |
 | Caddy | off the shelf | Docker Compose on the Hetzner box | `/` → web, `/api` + `/ws` → api, HTTPS on the mesh address only |
 
 ---
@@ -120,7 +127,7 @@ Clone every repo side by side into one local folder. Full per-repo trees are in 
 kubernetes-learning/                          # local workspace
 ├── docs/                                     # ← this repo
 ├── contracts/
-│   ├── proto/kubernetes_learning/v1/         # common, envmgr, harness, topology, view, session, rest
+│   ├── proto/kubernetes_learning/v1/         # common, envmgr, harness, topology, view, session, rest, jobs
 │   ├── dotnet/KubernetesLearning.Contracts/  # → NuGet
 │   └── ts/                                   # → @kubernetes-learning-platform/contracts (npm)
 ├── sandbox/
@@ -132,24 +139,25 @@ kubernetes-learning/                          # local workspace
 │   ├── tests/
 │   └── images/
 │       ├── base/                             # Packer: Proxmox VM template (Linux + Docker + k3d + harness)
-│       └── lessons/                          # demo-web v1/v2, traffic-probe
+│       └── scenarios/                        # demo-web v1/v2, traffic-probe
 ├── api/
 │   ├── src/
-│   │   ├── KubernetesLearning.Api/           # Controllers/, Realtime/, Sessions/, Auth/, Persistence/
-│   │   └── KubernetesLearning.Agent/         # AgentRunner, tools, LLM client, lesson checkpoints
-│   ├── lessons/                              # curated lesson YAML
+│   │   ├── KubernetesLearning.Api/           # Controllers/, Realtime/, Sessions/, Provisioning/, Auth/, Persistence/
+│   │   ├── KubernetesLearning.Scenarios/     # scenario catalog, runner and checks; no LLM dependency
+│   │   └── KubernetesLearning.Agent/         # the optional helper: AgentRunner, tools, LLM client
+│   ├── scenarios/                            # the first scenario, until the `scenarios` repo exists
 │   └── tests/
 ├── web/
 │   └── src/
 │       ├── app/                              # routes
-│       ├── components/                       # topology, chat, terminal, inspector, timeline, session
+│       ├── components/                       # topology, scenario panel, chat, terminal, inspector, timeline
 │       ├── lib/                              # REST + WebSocket (protobuf) clients
-│       └── state/                            # topology / view / session reducers
+│       └── state/                            # topology / view / scenario / session state
 └── platform/
     ├── .github/workflows/                    # reusable: dotnet-ci, node-ci, proto-ci, publish, release, vm-image
     ├── lint/                                 # canonical .editorconfig, analyzers, eslint, prettier
     ├── infra/                                # OpenTofu: hetzner/ (server, firewall), proxmox/ (bridge, pool, token)
-    ├── deploy/                               # hetzner/ (compose, Caddyfile), proxmox/ (envmgr unit, nftables), wireguard/
+    ├── deploy/                               # hetzner/ (compose with RabbitMQ, Caddyfile), proxmox/ (envmgr unit, nftables), wireguard/
     └── dev/                                  # local dev compose (Postgres + api with a fake sandbox)
 ```
 
@@ -191,18 +199,21 @@ More in [platform → Conventions](https://github.com/kubernetes-learning-platfo
 
 | | Owns |
 |---|---|
-| **Filip** | Infra for every repo (CI, lint, releases, deploy), the machines and the mesh, `contracts`, `sandbox`, the Agent, curated lessons |
-| **Person 2** | `api`: auth, sessions, WebSocket gateway, persistence, event log, control lock |
-| **Person 3** | `web`: topology canvas, chat, terminal, config inspector, timeline/replay |
+| **Filip** | Infra for every repo (CI, lint, releases, deploy), the machines and the mesh, `contracts`, `sandbox`, the Scenarios and Agent libraries, curated scenarios |
+| **Person 2** | `api`: auth, sessions, WebSocket gateway, persistence, event log, queue integration, progress |
+| **Person 3** | `web`: topology canvas, scenario panel, chat and question card, terminal, config inspector, timeline/replay |
 
 ## 🛣️ Roadmap
 
 | Milestone | Demoable result |
 |---|---|
 | **M1 Sandbox** | A 3-node cluster comes up in a Proxmox sandbox; commands run over the harness WebSocket; the UI renders a (fake) topology |
-| **M2 Agent** | Chat with the agent; it runs typed tools; streamed answers; live terminal; the stack is deployed on the Hetzner box over the mesh |
-| **M3 Live view** | Real topology from the cluster's watch streams, agent-driven camera, YAML inspector |
-| **M4 Lessons** | Fault injection, lessons with checkpoints, traffic animation, take control / hand back, replay |
+| **M2 Scenarios** | One click starts a queued sandbox; a real terminal; the first scenario with checks and reset, no LLM needed; the stack is deployed on the Hetzner box over the mesh |
+| **M3 Live view** | Real topology from the cluster's watch streams, including Ingress; YAML inspector |
+| **M4 Helper** | The optional helper: typed tools, streamed answers, demonstrations with feedback questions, an agent-driven camera |
+| **M5 Scenarios + scale** | The full 3–5 scenarios, the `scenarios` repo, a load test, timeline + replay, traffic animation |
+
+The final demo is **by June 2027**. The design target is 30 concurrent sandboxes, and only what the demo needs gets provisioned.
 
 **Stretch:** bring-your-own repo, add/remove nodes, spectator mode, real VMs as nodes.
 
