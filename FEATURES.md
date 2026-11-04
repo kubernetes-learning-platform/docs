@@ -10,10 +10,10 @@ Every feature of the platform: first **what the user sees**, then **how it works
 **What you see:** click "Start", and seconds later you have a working Kubernetes cluster with nodes `cp`, `w1`, `w2`.
 
 **How it works:**
-- **envmgr** is a host daemon that keeps 1–2 **microVMs** pre-booted (the "warm pool"). The VM software is Firecracker or Cloud Hypervisor, still OPEN.
+- Sandboxes run on a **Proxmox** box at home. **envmgr**, a daemon on that box, keeps 1–2 **VMs** pre-booted (the "warm pool"). Each VM is a linked clone of one VM template, so making a new one takes seconds.
 - Inside each VM, **k3d** runs **k3s** (lightweight Kubernetes). Each "node" is a Docker container, so the cluster comes up in seconds instead of minutes.
-- Every image the cluster needs is baked into the VM's disk image. Nothing is downloaded when a session starts.
-- Each VM runs in its own systemd unit, so restarting envmgr doesn't kill running sessions.
+- Every image the cluster needs is baked into the VM template. Nothing is downloaded when a session starts.
+- Proxmox runs the VMs, not envmgr, so restarting envmgr doesn't kill running sessions.
 - The VM is destroyed when the session ends or after ~30 minutes idle.
 
 ## 2. AI tutor chat
@@ -32,7 +32,8 @@ Every feature of the platform: first **what the user sees**, then **how it works
 **How it works:**
 - The **harness**, a small program inside the VM, **watches** the Kubernetes API (nodes, pods, deployments, replicasets, services, endpoints, events) and Docker events.
 - It keeps a normalized **graph model** of entities and edges ("owns", "runs on", "routes to"). It sends a full **snapshot** first, then only **diffs**, each with a revision number.
-- Path: harness → **vsock** (a VM-to-host socket that doesn't use networking) → envmgr → gRPC stream → api → WebSocket → browser.
+- Path: harness → **WebSocket** on an isolated network bridge → envmgr (on the Proxmox box) → gRPC stream over the **WireGuard mesh** → api (on the Hetzner box) → WebSocket → browser.
+- If the home connection blips, the lab shows "reconnecting", and the graph reloads from a fresh snapshot once the link is back.
 - **React Flow** draws it, and **elkjs** computes the layout.
 - **Key principle:** the graph is drawn *only* from real cluster state, never from what the agent *says*. If the agent claims "it worked" while a pod is crashing, the screen shows the crash.
 
@@ -106,19 +107,27 @@ Every feature of the platform: first **what the user sees**, then **how it works
 - Every message the server sends gets a **sequence number**. It's written to Postgres in an **append-only event log** *before* it's sent to the browser.
 - Replay reads those same messages back and feeds them into the same frontend code. To the UI, replay is just a different source.
 - The same log handles reconnects: a dropped browser sends `Resync{afterSeq}` and catches up.
+- The log lives on the Hetzner box, so replay works even when the Proxmox box at home is unreachable.
 
 ## 12. Accounts & sessions
 **What you see:** a login, and one active lab per person that cleans itself up when you walk away.
 
 **How it works:**
-- Auth sits behind an `IAuthProvider` interface. The mechanism is still OPEN, and a light one is enough for a presenter-driven demo.
+- Auth sits behind an `IAuthProvider` interface. The mechanism is still OPEN, and a light one is enough: the app is only reachable over the WireGuard mesh.
 - An idle reaper in api ends sessions after ~30 minutes, and envmgr has its own hard time limit as a backstop.
 
 ## 13. Isolation (invisible, but the reason the design looks like this)
 - **One VM per session:** a lesson that kills nodes or fills a disk can't touch the host or other sessions.
-- **No network route from the VM to host services.** The only way out is vsock to envmgr.
-- **No secrets in the VM.** Keys stay in api.
+- **One way out of a sandbox.** The VM sits on an isolated bridge, and envmgr's harness endpoint is the only address it can reach: no internet, no home network, no mesh, no other sandboxes.
+- **No secrets in the VM.** Keys stay in api. The VM only gets its own one-time token.
 - **MVP sandboxes are fully offline.**
+- **Nothing is public.** The whole app is only reachable over the WireGuard mesh.
+
+## 14. Where it runs (invisible)
+- **Hetzner box:** a small cloud server running `web`, `api`, Postgres and Caddy in Docker Compose.
+- **Proxmox box:** a PC at home running Proxmox VE, envmgr and the sandbox VMs.
+- **Demo laptop:** the browser on the projector.
+- All three are joined by a **WireGuard mesh**. The Hetzner box is the only one with a public address; the other two connect out to it, so no port forwarding is needed. See [ADR 0001](adr/0001-hosting-and-harness-transport.md).
 
 ---
 

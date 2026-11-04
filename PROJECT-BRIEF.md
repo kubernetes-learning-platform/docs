@@ -5,6 +5,8 @@
 > "kubernetes-learning" is a placeholder name. The original working name was dropped.
 >
 > **This is the original brief.** Where it and [ARCHITECTURE.md](ARCHITECTURE.md) disagree (repo layout in §12, open questions answered since), ARCHITECTURE.md wins.
+>
+> **Hosting and the harness transport changed on 2026-11-04** ([ADR 0001](adr/0001-hosting-and-harness-transport.md)): the stack runs on a Hetzner box, sandboxes are Proxmox VMs on a PC at home, all machines (including the demo laptop) are joined by a WireGuard mesh, and the harness speaks WebSocket instead of vsock. Sections §1, §2, §4, §5, §10 and §14 below are marked where this applies; the original text is kept for history.
 
 ---
 
@@ -16,7 +18,7 @@ One-liner: *an AI tutor combined with a live Kubernetes lab, where every explana
 
 ### Context
 - University team project (generic team-project course). The deadline is far off, but the team wants to build ASAP. **DECIDED**
-- **Demo/presentation only.** Not public, single-host deployment on one team member's PC. **DECIDED**
+- **Demo/presentation only.** Not public, single-host deployment on one team member's PC. **DECIDED** *(Superseded by ADR 0001: still demo-only and not public, but split across a Hetzner box and a Proxmox box on a WireGuard mesh.)*
 
 ### Scope
 - **Kubernetes only.** **DECIDED**
@@ -28,6 +30,8 @@ One-liner: *an AI tutor combined with a live Kubernetes lab, where every explana
 ---
 
 ## 2. Architecture overview
+
+> **Superseded in part by [ADR 0001](adr/0001-hosting-and-harness-transport.md):** web, api and Postgres run on a Hetzner box; envmgr and the sandbox VMs run on a Proxmox box at home; api reaches envmgr over a WireGuard mesh; the harness connects with WebSocket, not vsock. See [ARCHITECTURE §3](ARCHITECTURE.md#3-runtime-architecture) for the current diagram.
 
 ```
                       ┌──────────────────────────── Host machine (one team PC, Linux + KVM) ───────────────────────────┐
@@ -86,6 +90,9 @@ One-liner: *an AI tutor combined with a live Kubernetes lab, where every explana
 - The topology model must stay node-implementation-agnostic, so real VMs-as-nodes can slot in later as a stretch goal.
 
 ### Isolation
+
+> **Superseded in part by [ADR 0001](adr/0001-hosting-and-harness-transport.md):** sandboxes are Proxmox VMs on an isolated bridge, and envmgr's harness WebSocket endpoint is the only address they can reach. There is no vsock. Proxmox runs the VMs, so the systemd-unit-per-VM scheme in *Lifecycle* below is no longer needed, though VMs still survive envmgr restarts. The *Local VMM* provider is now a Proxmox provider.
+
 - **One VM per session**, destroyed at session end. **DECIDED**
 - **No network path from VM to host services:** the harness talks to the host over **virtio-vsock**. **DECIDED** (Firecracker and Cloud Hypervisor support vsock; the VMM choice is **OPEN**.)
 - **Keys stay outside the VM.** **DECIDED**
@@ -117,6 +124,8 @@ One-liner: *an AI tutor combined with a live Kubernetes lab, where every explana
 ---
 
 ## 5. Communication & protocols
+
+> **Superseded in part by [ADR 0001](adr/0001-hosting-and-harness-transport.md):** api ↔ envmgr is gRPC over the WireGuard mesh (not a unix socket), and envmgr ↔ harness is WebSocket for every provider (not vsock). The relay recommendation below was adopted.
 
 | Link | Transport | Notes |
 |---|---|---|
@@ -249,6 +258,8 @@ Main surfaces:
 
 ## 10. Build & ship
 
+> **Superseded in part by [ADR 0001](adr/0001-hosting-and-harness-transport.md):** the VM base image is now a Proxmox VM template built by Packer. Compose runs on the Hetzner box, envmgr runs as a systemd unit on the Proxmox host, and the unit below no longer needs the `DeviceAllow` lines because Proxmox runs the VMs. Deploy files live in `platform/deploy/`, one folder per machine.
+
 | Artifact | Published to |
 |---|---|
 | `web` image | GHCR |
@@ -351,6 +362,8 @@ Target **.NET 10** for all .NET projects (Native AOT for the harness; avoid refl
 ---
 
 ## 14. Open questions
+
+> **Answered since:** 1 (Proxmox VE on the home server PC), 2 (Proxmox's QEMU/KVM), 5 (envmgr relays over gRPC) and 6 (Packer, CALL), by [ADR 0001](adr/0001-hosting-and-harness-transport.md) and ARCHITECTURE.md. The current list is in [ARCHITECTURE §11](ARCHITECTURE.md#11-open-questions).
 
 1. **Demo host OS:**
    - Linux on bare metal is preferred (KVM directly).

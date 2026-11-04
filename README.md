@@ -4,7 +4,7 @@
 
 You ask the agent to explain or demonstrate a Kubernetes concept: rolling updates, scheduling, service discovery, a `CrashLoopBackOff`. The agent then builds and operates a **real, disposable 3-node cluster** in an isolated VM. It deploys apps, breaks things on purpose and troubleshoots them, while a **live visual interface** shows every change as it happens. You can take control at any point and fix things yourself.
 
-University team project · demo-only, single host · *"kubernetes-learning" is a placeholder name*
+University team project · demo-only · a Hetzner box + a Proxmox box at home on a WireGuard mesh · *"kubernetes-learning" is a placeholder name*
 
 ---
 
@@ -15,6 +15,7 @@ University team project · demo-only, single host · *"kubernetes-learning" is a
 | [ARCHITECTURE.md](ARCHITECTURE.md) | **Start here.** Repos, services, controllers, contracts, key flows, per-repo folder trees, CI/CD, milestones, risks |
 | [FEATURES.md](FEATURES.md) | Every feature, explained twice: what the user sees and how it works technically |
 | [PROJECT-BRIEF.md](PROJECT-BRIEF.md) | The original brief: product intent, sandbox design, agent tools, rejected alternatives |
+| [adr/](adr/) | Architecture decision records, one per decision. [0001](adr/0001-hosting-and-harness-transport.md): hosting over a WireGuard mesh, Proxmox sandboxes, WebSocket-only harness |
 
 Decision labels used throughout: **DECIDED** (agreed) · **DEFAULT** (proposed, not objected to) · **OPEN** (not decided) · **CALL** (chosen during planning, change freely).
 
@@ -28,10 +29,10 @@ GitHub has no nested repos, so the organization is the container and **this repo
 |---|---|---|---|
 | **[docs](https://github.com/kubernetes-learning-platform/docs)** | This documentation hub | Filip (everyone contributes) | ✅ |
 | **[contracts](https://github.com/kubernetes-learning-platform/contracts)** | Protobuf schema for the whole system → NuGet + npm packages | Filip | README only |
-| **[sandbox](https://github.com/kubernetes-learning-platform/sandbox)** | `envmgr` (host daemon), `harness` (in-VM agent), SandboxClient library, VM base image, lesson images | Filip | README only |
+| **[sandbox](https://github.com/kubernetes-learning-platform/sandbox)** | `envmgr` (daemon on the Proxmox box), `harness` (in-VM agent), SandboxClient library, Proxmox VM template, lesson images | Filip | README only |
 | **[api](https://github.com/kubernetes-learning-platform/api)** | ASP.NET Core backend + the Agent library + curated lessons | Person 2 (Agent + lessons: Filip) | README only |
 | **[web](https://github.com/kubernetes-learning-platform/web)** | Next.js frontend: canvas, chat, terminal, inspector, replay | Person 3 | README only |
-| **[platform](https://github.com/kubernetes-learning-platform/platform)** | Shared CI workflows, lint configs, deploy + dev Compose files | Filip | README only |
+| **[platform](https://github.com/kubernetes-learning-platform/platform)** | Shared CI workflows, lint configs, infrastructure code, deploy files per machine, dev Compose | Filip | README only |
 
 ```mermaid
 flowchart LR
@@ -54,30 +55,31 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    browser["Browser"]
+    laptop["Demo laptop<br/>browser"]
     llm["LLM API"]
 
-    subgraph host["Demo host (Linux + KVM)"]
-        subgraph compose["Docker Compose"]
-            proxy["proxy<br/>Caddy"]
-            web["web<br/>Next.js"]
-            api["api<br/>ASP.NET Core + agent"]
-            db[("Postgres<br/>users, sessions, event log")]
-        end
-        envmgr["envmgr<br/>systemd daemon"]
+    subgraph hetzner["Hetzner box · Docker Compose"]
+        proxy["proxy<br/>Caddy"]
+        web["web<br/>Next.js"]
+        api["api<br/>ASP.NET Core + agent"]
+        db[("Postgres<br/>users, sessions, event log")]
+    end
+
+    subgraph home["Proxmox box (home)"]
+        envmgr["envmgr<br/>systemd on the host"]
         subgraph vm["Sandbox VM (one per session)"]
             harness["harness<br/>Native AOT"]
             k3d["k3d cluster<br/>cp, w1, w2"]
         end
     end
 
-    browser -->|HTTPS| proxy
+    laptop -->|"HTTPS over WireGuard"| proxy
     proxy --> web
     proxy -->|"REST + WebSocket (protobuf)"| api
     api --> db
     api -->|HTTPS| llm
-    api -->|"gRPC over unix socket"| envmgr
-    envmgr <-->|vsock| harness
+    api -->|"gRPC over WireGuard"| envmgr
+    harness -->|"WebSocket, isolated bridge"| envmgr
     harness -->|"kubectl, docker, watches"| k3d
 ```
 
@@ -87,16 +89,26 @@ flowchart LR
 2. **The view never trusts the narrator.** The canvas is drawn *only* from real cluster state (the harness watches Kubernetes). The agent can only move the camera (`focus`, `highlight`, `annotate`). If the agent says "done" while a pod is crashing, you see the crash.
 3. **Faults are typed tools, not ad-hoc shell commands.** `kill_node`, `partition`, `bad_image` are recorded and reversible, so the UI knows exactly what was broken.
 
+### Machines
+
+All three are on one **WireGuard mesh**. Nothing is public: the app is only reachable over the mesh. Details in [ARCHITECTURE §3.1](ARCHITECTURE.md#31-machines-and-the-mesh) and [ADR 0001](adr/0001-hosting-and-harness-transport.md).
+
+| Machine | Runs | Mesh address |
+|---|---|---|
+| **Hetzner box** | Docker Compose: Caddy, `web`, `api`, Postgres. The only peer with a public endpoint (WireGuard + SSH only). | `10.66.0.1` |
+| **Proxmox box** (home) | Proxmox VE, `envmgr`, one sandbox VM per session on an isolated bridge | `10.66.0.2` |
+| **Demo laptop** | The browser on the projector | `10.66.0.3` |
+
 ### Services
 
 | Service | Tech | Runs | Entry points |
 |---|---|---|---|
-| **web** | Next.js (React Flow, xterm.js, Monaco) | Docker Compose | Routes: `/`, `/login`, `/session/[id]`, `/session/[id]/replay` |
-| **api** | ASP.NET Core, .NET 10 | Docker Compose | **4 controllers**: `Auth`, `Sessions`, `Lessons`, `Events` · WebSocket `/ws/sessions/{id}` |
-| **envmgr** | .NET 10 daemon | systemd on the host | **1 gRPC service**: `Create` / `Destroy` / `Get` / `List` / `Watch` sandbox + `Connect` relay |
+| **web** | Next.js (React Flow, xterm.js, Monaco) | Docker Compose on the Hetzner box | Routes: `/`, `/login`, `/session/[id]`, `/session/[id]/replay` |
+| **api** | ASP.NET Core, .NET 10 | Docker Compose on the Hetzner box | **4 controllers**: `Auth`, `Sessions`, `Lessons`, `Events` · WebSocket `/ws/sessions/{id}` |
+| **envmgr** | .NET 10 daemon | systemd on the Proxmox host | **1 gRPC service** on the mesh: `Create` / `Destroy` / `Get` / `List` / `Watch` sandbox + `Connect` relay · harness WebSocket on the sandbox bridge |
 | **harness** | .NET 10 Native AOT | inside every sandbox VM | Frame router → `Exec`, `Pty`, `File`, `Fault` handlers + Kubernetes/Docker watchers |
-| Postgres | off the shelf | Docker Compose | Users, sessions, append-only event log |
-| Caddy | off the shelf | Docker Compose | `/` → web, `/api` + `/ws` → api |
+| Postgres | off the shelf | Docker Compose on the Hetzner box | Users, sessions, append-only event log |
+| Caddy | off the shelf | Docker Compose on the Hetzner box | `/` → web, `/api` + `/ws` → api, HTTPS on the mesh address only |
 
 ---
 
@@ -119,7 +131,7 @@ kubernetes-learning/                          # local workspace
 │   │   └── KubernetesLearning.Sbx/           # dev CLI: create | exec | watch | destroy
 │   ├── tests/
 │   └── images/
-│       ├── base/                             # VM base image (Linux + Docker + k3d + harness)
+│       ├── base/                             # Packer: Proxmox VM template (Linux + Docker + k3d + harness)
 │       └── lessons/                          # demo-web v1/v2, traffic-probe
 ├── api/
 │   ├── src/
@@ -136,7 +148,8 @@ kubernetes-learning/                          # local workspace
 └── platform/
     ├── .github/workflows/                    # reusable: dotnet-ci, node-ci, proto-ci, publish, release, vm-image
     ├── lint/                                 # canonical .editorconfig, analyzers, eslint, prettier
-    ├── deploy/                               # docker-compose.yml, Caddyfile, envmgr.service, install.sh
+    ├── infra/                                # OpenTofu: hetzner/ (server, firewall), proxmox/ (bridge, pool, token)
+    ├── deploy/                               # hetzner/ (compose, Caddyfile), proxmox/ (envmgr unit, nftables), wireguard/
     └── dev/                                  # local dev compose (Postgres + api with a fake sandbox)
 ```
 
@@ -159,7 +172,7 @@ You'll need:
 - Docker Desktop (give it ≥ 6 GB of memory for one local sandbox)
 - A GitHub personal access token with `read:packages`, to install the `contracts` packages from GitHub Packages
 
-Nobody needs KVM for day-to-day work. `envmgr` has a **Docker provider** for macOS/Windows, and `api` can run against a **fake sandbox** that plays a scripted cluster.
+Nobody needs KVM or Proxmox for day-to-day work. `envmgr` has a **Docker provider** for macOS/Windows, and `api` can run against a **fake sandbox** that plays a scripted cluster. To open the deployed app, ask Filip for a WireGuard peer config.
 
 ---
 
@@ -178,7 +191,7 @@ More in [platform → Conventions](https://github.com/kubernetes-learning-platfo
 
 | | Owns |
 |---|---|
-| **Filip** | Infra for every repo (CI, lint, releases, deploy), `contracts`, `sandbox`, the Agent, curated lessons |
+| **Filip** | Infra for every repo (CI, lint, releases, deploy), the machines and the mesh, `contracts`, `sandbox`, the Agent, curated lessons |
 | **Person 2** | `api`: auth, sessions, WebSocket gateway, persistence, event log, control lock |
 | **Person 3** | `web`: topology canvas, chat, terminal, config inspector, timeline/replay |
 
@@ -186,8 +199,8 @@ More in [platform → Conventions](https://github.com/kubernetes-learning-platfo
 
 | Milestone | Demoable result |
 |---|---|
-| **M1 Sandbox** | A 3-node cluster comes up in an isolated sandbox; commands run over vsock; the UI renders a (fake) topology |
-| **M2 Agent** | Chat with the agent; it runs typed tools; streamed answers; live terminal |
+| **M1 Sandbox** | A 3-node cluster comes up in a Proxmox sandbox; commands run over the harness WebSocket; the UI renders a (fake) topology |
+| **M2 Agent** | Chat with the agent; it runs typed tools; streamed answers; live terminal; the stack is deployed on the Hetzner box over the mesh |
 | **M3 Live view** | Real topology from the cluster's watch streams, agent-driven camera, YAML inspector |
 | **M4 Lessons** | Fault injection, lessons with checkpoints, traffic animation, take control / hand back, replay |
 
