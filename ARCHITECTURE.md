@@ -339,7 +339,7 @@ The starting sketch in brief §5 maps directly onto these files.
 
 ## 6. Key flows
 
-Flow 1 and flows 3 to 4, drawn out:
+Diagrams for flow 1 and for flows 3 to 4:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/session-start-dark.svg">

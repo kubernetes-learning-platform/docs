@@ -1,52 +1,52 @@
 # kubernetes-learning-platform
 
-> **A live Kubernetes lab with an optional AI helper**, where you learn by doing on real infrastructure you can see, poke and break.
+> A live Kubernetes lab with an optional AI helper. Learners work on a real, disposable cluster and see every change as it happens.
 
-University team project · demo-only · a Hetzner box + a Proxmox box at home on a WireGuard mesh · *"kubernetes-learning" is a placeholder name*
-
----
-
-## 🧭 What this is
-
-Kubernetes is hard to learn from slides, because the interesting part is what happens when something changes or breaks. This project gives every learner a real cluster of their own to change and break.
-
-- **One click, one cluster.** You get a real, disposable 3-node Kubernetes cluster inside its own virtual machine, and a real terminal into it. Nothing is simulated, and `kubectl` works the way it does anywhere else.
-- **You see what you do.** A live picture of the cluster sits next to the terminal. Start a deployment and its pods appear. Kill a node and you watch its pods move to another one.
-- **Scenarios give you something to fix.** A scenario such as "the site returns 503, find out why" comes with checks that turn green when the cluster really works, hints you can open, and a reset.
-- **A helper, if you want one.** An AI helper can explain what's going on or demonstrate a step. It only acts when you ask, shows every command it runs, and then asks you how to continue. Everything else works without it.
-
-When you're done, the virtual machine is thrown away.
+University team project · demo only · hosted on a Hetzner box and a Proxmox box joined by a WireGuard mesh · "kubernetes-learning" is a placeholder name
 
 ---
 
-## 🏗️ The system in one picture
+## Overview
+
+The platform gives each learner a real Kubernetes cluster to work on. A session provides:
+
+- **A dedicated cluster.** A disposable 3-node cluster in its own virtual machine, with a terminal and unrestricted `kubectl` access. Nothing is simulated.
+- **A live view.** A diagram of the cluster next to the terminal, updated as nodes, pods, services and ingresses change.
+- **Scenarios.** Guided exercises, such as repairing a broken ingress, with automatic checks, optional hints and a reset.
+- **An optional AI helper.** It explains and demonstrates on request, shows every command it runs, and asks how to continue. The rest of the platform works without it.
+
+The virtual machine is deleted when the session ends.
+
+---
+
+## Architecture
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/system-map-dark.svg">
   <img src="assets/diagrams/system-map-light.svg" width="100%" alt="The whole system. A browser reaches the Caddy proxy on the Hetzner box, which serves web and forwards to api. api uses Postgres, RabbitMQ and an LLM API, and reaches envmgr on the Proxmox box over the WireGuard mesh. envmgr relays to the harness inside a sandbox VM, which drives a three-node k3d cluster.">
 </picture>
 
-Read it left to right. Your browser is on the left, and your cluster is on the far right, inside a sandbox VM. Everything in between exists to connect the two safely.
+A browser connects to the stack on the Hetzner box. The stack connects over the WireGuard mesh to the Proxmox box, which hosts one sandbox VM per session.
 
-| Part | What it does, in plain words |
+| Component | Responsibility |
 |---|---|
-| **web** | The app you see in the browser: the picture of the cluster, the terminal, the scenario panel and the chat. It has no logic of its own and gets everything from `api`. |
-| **Caddy** | The front door. It gives the browser one HTTPS address, and passes page requests to `web` and everything else to `api`. |
-| **api** | The brain. It knows who you are and which session is yours, runs the scenarios and the optional helper, and records every event of a session in order. It never runs Kubernetes itself. |
-| **Postgres** | The memory: accounts, sessions, progress, and the event log that makes replay possible. |
-| **RabbitMQ** | The waiting line. Requests to start or delete a sandbox wait here until the sandbox host has room. Nothing else goes through it. |
-| **envmgr** | The sandbox manager, on the machine that hosts the VMs. It keeps a few VMs booted and ready, hands one out per session, deletes it afterwards, and passes messages between `api` and the VM. |
-| **harness** | A small program inside every VM. It runs commands, provides the terminal, checks scenario steps, and watches the cluster so it can report every change. |
-| **k3d cluster** | The actual Kubernetes: three nodes (`cp`, `w1`, `w2`) that run as containers inside the VM. |
+| **web** | The browser application: cluster view, terminal, scenario panel and helper chat. It holds no business logic and reads all data from `api`. |
+| **Caddy** | Reverse proxy. Serves one HTTPS origin and routes page requests to `web`, and API and WebSocket requests to `api`. |
+| **api** | Backend. Handles authentication and sessions, runs scenarios and the optional helper, and records every session event in order. It does not run Kubernetes. |
+| **Postgres** | Stores accounts, sessions, progress and the session event log used for replay. |
+| **RabbitMQ** | Work queue for sandbox start and teardown requests. No other traffic uses it. |
+| **envmgr** | Sandbox manager on the Proxmox host. Maintains a pool of ready VMs, assigns one per session, deletes it afterwards, and relays messages between `api` and the VM. |
+| **harness** | Agent inside each VM. Executes commands, provides the terminal, runs scenario checks, and watches the cluster to report changes. |
+| **k3d cluster** | The Kubernetes cluster: three nodes (`cp`, `w1`, `w2`) running as containers inside the VM. |
 
-We write four of these: `web`, `api`, `envmgr` and `harness`. Postgres, RabbitMQ and Caddy are used off the shelf.
+`web`, `api`, `envmgr` and `harness` are developed in this project. Postgres, RabbitMQ and Caddy are standard components.
 
-**Four ideas shape everything:**
+### Design principles
 
-1. **The learner drives.** The terminal is yours by default, and scenarios and their checks work with no LLM. The helper only acts when you ask, shows every command, and then asks you how to continue.
-2. **The helper's brain lives in the backend; the VM gets a thin executor.** The LLM loop runs in `api`. The `harness` only executes commands and observes, so API keys never enter the VM, and a VM can die without losing the conversation.
-3. **The view never trusts the narrator.** The canvas is drawn *only* from real cluster state (the harness watches Kubernetes). The helper can only move the camera (`focus`, `highlight`, `annotate`). If it says "done" while a pod is crashing, you see the crash.
-4. **Faults are typed tools, not ad-hoc shell commands.** `kill_node`, `partition`, `bad_image` are recorded and reversible, so the UI knows exactly what was broken.
+1. **The learner is in control.** The terminal belongs to the learner by default, and scenarios and their checks do not require an LLM. The helper acts only on request, shows every command, and then asks how to continue.
+2. **The helper's logic runs in the backend.** The LLM loop runs in `api`. The `harness` only executes commands and observes, so API keys never enter the VM, and a VM can be lost without losing the conversation.
+3. **The view reflects actual cluster state.** The canvas is drawn only from what the harness observes in Kubernetes. The helper can move the camera (`focus`, `highlight`, `annotate`) but cannot change what is shown.
+4. **Faults are typed operations.** `kill_node`, `partition` and `bad_image` are recorded and reversible, so the UI knows exactly what was broken.
 
 ### Machines
 
@@ -72,103 +72,107 @@ All three are on one **WireGuard mesh**. Nothing is public: the app is only reac
 
 ---
 
-## ▶️ What happens when you click Start
+## Session startup
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/session-start-dark.svg">
   <img src="assets/diagrams/session-start-light.svg" width="100%" alt="Starting a session in eight steps, from the browser through api and the RabbitMQ work queue to envmgr and a sandbox VM, and back to the browser.">
 </picture>
 
-1. The browser asks `api` for a session. `api` creates it in the `queued` state.
-2. `api` puts a start request on the work queue.
-3. `envmgr` takes the request as soon as it has room. If every sandbox is in use, the request waits, and you see your place in line.
-4. `envmgr` hands over a VM that is already booted (the warm pool), or clones a new one from the template. This is why a start takes seconds.
-5. `envmgr` answers through the queue: which sandbox, and where to reach it.
-6. `api` opens a direct connection to `envmgr` for this session. From here on the queue is out of the picture.
+1. The browser requests a session. `api` creates it in the `queued` state.
+2. `api` publishes a start request to the work queue.
+3. `envmgr` consumes the request when capacity is available. Until then the request stays queued, and the learner sees their position.
+4. `envmgr` assigns a VM from the warm pool, or clones a new one from the template.
+5. `envmgr` publishes the result: the sandbox ID and its own address.
+6. `api` opens a direct gRPC stream to `envmgr` for the session. The queue is not used after this point.
 7. The harness sends a full snapshot of the cluster.
-8. The browser shows the session as live and draws the snapshot.
+8. The browser marks the session as live and renders the snapshot.
 
-Ending a session goes through the same queue, so a teardown isn't lost if the link between the two machines drops. Details: [ARCHITECTURE §6](ARCHITECTURE.md#6-key-flows), flows 1 and 11.
+Teardown uses the same queue, so a teardown request is not lost if the link between the two machines drops. See [ARCHITECTURE §6](ARCHITECTURE.md#6-key-flows), flows 1 and 11.
 
-## 🔁 How a change reaches the screen
+## State and intent streams
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/two-streams-dark.svg">
   <img src="assets/diagrams/two-streams-light.svg" width="100%" alt="A command travels from the terminal through api and envmgr to the harness, which runs it. The cluster changes, the harness sees the change through its watches, and a diff travels back through envmgr and api to the canvas. Separately, the helper can only move the camera.">
 </picture>
 
-1. You type a command in the terminal.
-2. It travels through `api` and `envmgr` to the harness, which runs it in a real shell in the VM.
-3. The cluster changes: a pod starts, a node goes down.
-4. The harness is watching the Kubernetes API, so it sees the change for itself.
-5. It sends a small diff, such as "this pod is now crash-looping", back the way the command came.
-6. `api` gives the message a number, saves it, and sends it to the browser, which redraws.
+1. The learner enters a command in the terminal.
+2. `api` and `envmgr` forward it to the harness, which runs it in a shell inside the VM.
+3. The cluster changes.
+4. The harness observes the change through its Kubernetes watches.
+5. The harness sends a diff back along the same path.
+6. `api` assigns the message a sequence number, stores it, and sends it to the browser, which redraws the canvas.
 
-The picture of the cluster is drawn **only** from step 4, from what the cluster really is. It isn't drawn from the command you typed, and never from what the helper says.
+The canvas is rendered only from this state stream. It does not use the command that was entered or anything the helper reports.
 
-The helper has a second, separate channel. It can move the camera: zoom in on a pod, highlight a deployment, pin a note. It can't add or change anything in the picture.
+The helper uses a separate intent stream. It can focus, highlight and annotate elements on the canvas, but it cannot add or modify them.
 
-Because step 6 saves every message before sending it, a browser that drops off can catch up from the last number it saw, and a finished session can be replayed exactly as it happened.
+Because each message is stored before it is sent, a reconnecting browser resumes from the last sequence number it received, and a finished session can be replayed exactly.
 
-## 🤝 The helper
+## Helper states
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/helper-turn-dark.svg">
   <img src="assets/diagrams/helper-turn-light.svg" width="100%" alt="The three states of the helper. Idle: the terminal is yours. Acting: the helper is working, the terminal is read-only and a Stop button is available. Waiting: the helper has asked a question and the terminal is yours again. If the token budget is spent, the helper switches off and the scenario carries on.">
 </picture>
 
-The terminal is yours by default, and the helper does nothing until you send it a message.
+A helper turn starts only when the learner sends a message or answers a question.
 
-- **Acting.** While it works, your terminal is read-only, its commands scroll by as `agent$ …`, and a **Stop** button ends its turn.
-- **Waiting.** When it wants to know how to continue, it asks a question with options it wrote itself, hands the terminal back, and waits for your answer.
-- **Off.** Each session has a token budget. When it runs out, the helper switches off and says so, and your scenario carries on.
+| State | Terminal and inspector | Helper |
+|---|---|---|
+| **Idle** | Writable | Inactive |
+| **Acting** | Read-only, with a **Stop** button | Runs tools. Its commands appear in the terminal as `agent$ …` |
+| **Waiting** | Writable | Has asked a question and waits for the answer |
 
-Details: [ARCHITECTURE §6.1](ARCHITECTURE.md#61-who-drives-decided-adr-0002) and [FEATURES §3–4](FEATURES.md#3-the-optional-ai-helper).
+Each session has a token budget. When it is used up, the helper is disabled and reports this, and the scenario continues.
+
+See [ARCHITECTURE §6.1](ARCHITECTURE.md#61-who-drives-decided-adr-0002) and [FEATURES §3–4](FEATURES.md#3-the-optional-ai-helper).
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 | Document | What's in it |
 |---|---|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | **Start here.** Repos, services, controllers, contracts, key flows, per-repo folder trees, CI/CD, milestones, risks |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | The main reference. Repos, services, controllers, contracts, key flows, per-repo folder trees, CI/CD, milestones, risks |
 | [FEATURES.md](FEATURES.md) | Every feature, explained twice: what the user sees and how it works technically |
 | [PROJECT-BRIEF.md](PROJECT-BRIEF.md) | The original brief: product intent, sandbox design, agent tools, rejected alternatives |
 | [adr/](adr/) | Architecture decision records, one per decision. [0001](adr/0001-hosting-and-harness-transport.md): hosting over a WireGuard mesh, Proxmox sandboxes, WebSocket-only harness. [0002](adr/0002-learner-driven-scenarios-and-scale-target.md): learner-driven scenarios, the optional helper, RabbitMQ, the 30-sandbox design target |
 
-The pictures on this page are generated by [`assets/diagrams/generate.py`](assets/diagrams/generate.py). To change one, edit its definition in that file and run it again.
+The diagrams are generated by [`assets/diagrams/generate.py`](assets/diagrams/generate.py). To change one, edit its definition in that file and run the script.
 
 Decision labels used throughout: **DECIDED** (agreed) · **DEFAULT** (proposed, not objected to) · **OPEN** (not decided) · **CALL** (chosen during planning, change freely).
 
 ---
 
-## 🗂️ Repositories
+## Repositories
 
-GitHub has no nested repos, so the organization is the container and **this repo is the parent** that links everything.
+GitHub has no nested repositories, so the organization groups them and this repository links to the others.
 
 | Repo | Purpose | Owner | Status |
 |---|---|---|---|
-| **[docs](https://github.com/kubernetes-learning-platform/docs)** | This documentation hub | Filip (everyone contributes) | ✅ |
-| **[contracts](https://github.com/kubernetes-learning-platform/contracts)** | Protobuf schema for the whole system → NuGet + npm packages | Filip | README only |
-| **[sandbox](https://github.com/kubernetes-learning-platform/sandbox)** | `envmgr` (daemon on the Proxmox box), `harness` (in-VM agent), SandboxClient library, Proxmox VM template, scenario images | Filip | README only |
-| **[api](https://github.com/kubernetes-learning-platform/api)** | ASP.NET Core backend + the Scenarios and Agent libraries | Person 2 (Scenarios + Agent: Filip) | README only |
-| **[web](https://github.com/kubernetes-learning-platform/web)** | Next.js frontend: canvas, scenarios, terminal, helper chat, inspector, replay | Person 3 | README only |
-| **[platform](https://github.com/kubernetes-learning-platform/platform)** | Shared CI workflows, lint configs, infrastructure code, deploy files per machine (including RabbitMQ), dev Compose | Filip | README only |
+| **[docs](https://github.com/kubernetes-learning-platform/docs)** | This documentation hub | Filip (everyone contributes) | Current |
+| **[contracts](https://github.com/kubernetes-learning-platform/contracts)** | Protobuf schema for the whole system → NuGet + npm packages | Filip | Documentation only |
+| **[sandbox](https://github.com/kubernetes-learning-platform/sandbox)** | `envmgr` (daemon on the Proxmox box), `harness` (in-VM agent), SandboxClient library, Proxmox VM template, scenario images | Filip | Documentation only |
+| **[api](https://github.com/kubernetes-learning-platform/api)** | ASP.NET Core backend + the Scenarios and Agent libraries | Person 2 (Scenarios + Agent: Filip) | Documentation only |
+| **[web](https://github.com/kubernetes-learning-platform/web)** | Next.js frontend: canvas, scenarios, terminal, helper chat, inspector, replay | Person 3 | Documentation only |
+| **[platform](https://github.com/kubernetes-learning-platform/platform)** | Shared CI workflows, lint configs, infrastructure code, deploy files per machine (including RabbitMQ), dev Compose | Filip | Documentation only |
 
-A seventh repo, `scenarios`, gets created once the flow is up and working. Until then, the first scenario lives in `api`.
+A seventh repository, `scenarios`, will be created once the end-to-end flow works. Until then, the first scenario is kept in `api`.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/repos-dark.svg">
   <img src="assets/diagrams/repos-light.svg" width="100%" alt="The five code repositories. contracts publishes a NuGet and an npm package. sandbox and api install the NuGet package, web installs the npm package, and api also installs SandboxClient from sandbox. Every repo calls the CI workflows in platform.">
 </picture>
 
-Read the arrows as "installs a package from". `contracts` defines every message the programs exchange and publishes it twice, as a NuGet package for the .NET repos and an npm package for `web`. `api` also installs `SandboxClient` from `sandbox`, so it can talk to a sandbox without knowing how the connection works. Every repo's CI is a few lines that call a workflow in `platform`.
+An arrow means "installs a package from". `contracts` defines every message exchanged between the programs and publishes it as a NuGet package for the .NET repositories and an npm package for `web`. `api` also installs `SandboxClient` from `sandbox`. Each repository's CI calls reusable workflows in `platform`.
 
 ---
 
-## 📁 Workspace folder structure
+## Workspace layout
 
-Clone every repo side by side into one local folder. Full per-repo trees are in [ARCHITECTURE.md §7](ARCHITECTURE.md#7-folder-structure).
+Clone the repositories side by side into one local folder. Full per-repo trees are in [ARCHITECTURE.md §7](ARCHITECTURE.md#7-folder-structure).
 
 ```
 kubernetes-learning/                          # local workspace
@@ -210,9 +214,9 @@ kubernetes-learning/                          # local workspace
 
 ---
 
-## 🚀 Getting started
+## Getting started
 
-> Every repo exists, but the code repos only hold a README so far. Code lands in M1.
+The code repositories currently contain documentation only. Implementation starts in milestone M1.
 
 ```bash
 mkdir kubernetes-learning && cd kubernetes-learning
@@ -221,28 +225,28 @@ for repo in docs contracts sandbox api web platform; do
 done
 ```
 
-You'll need:
+Requirements:
 - .NET 10 SDK
 - Node.js LTS
 - Docker Desktop (give it ≥ 6 GB of memory for one local sandbox)
 - A GitHub personal access token with `read:packages`, to install the `contracts` packages from GitHub Packages
 
-Nobody needs KVM or Proxmox for day-to-day work. `envmgr` has a **Docker provider** for macOS/Windows, and `api` can run against a **fake sandbox** that plays a scripted cluster. To open the deployed app, ask Filip for a WireGuard peer config.
+KVM and Proxmox are not required for day-to-day development. `envmgr` has a **Docker provider** for macOS/Windows, and `api` can run against a **fake sandbox** that plays a scripted cluster. Access to the deployed application requires a WireGuard peer configuration from Filip.
 
 ---
 
-## 📏 Conventions
+## Conventions
 
 - **Commits:** strict [Conventional Commits](https://www.conventionalcommits.org/), one line, e.g. `feat: add warm pool`. No body, no co-author trailers.
 - **PRs:** the title uses the same format. Every repo only allows squash merges, and the squash commit is the PR title, so `main` gets one clean line per change. A check fails any PR whose title doesn't follow the format.
 - **Copilot:** every PR gets one Copilot review when it opens, except Markdown-only PRs and PRs labelled `skip-copilot`. It needs Copilot on your account, which is free through GitHub Student.
 - **Branches:** `type/anything`, e.g. `feat/warm-pool` or `fix/harness-reconnect`, deleted after merging. For an issue, use its **Create a branch** button and rename the suggested branch to match.
 
-More in [platform → Conventions](https://github.com/kubernetes-learning-platform/platform#-conventions).
+More in [platform → Conventions](https://github.com/kubernetes-learning-platform/platform#conventions).
 
 ---
 
-## 👥 Team
+## Team
 
 | | Owns |
 |---|---|
@@ -250,7 +254,7 @@ More in [platform → Conventions](https://github.com/kubernetes-learning-platfo
 | **Person 2** | `api`: auth, sessions, WebSocket gateway, persistence, event log, queue integration, progress |
 | **Person 3** | `web`: topology canvas, scenario panel, chat and question card, terminal, config inspector, timeline/replay |
 
-## 🛣️ Roadmap
+## Roadmap
 
 | Milestone | Demoable result |
 |---|---|
@@ -264,6 +268,6 @@ The final demo is **by June 2027**. The design target is 30 concurrent sandboxes
 
 **Stretch:** bring-your-own repo, add/remove nodes, spectator mode, real VMs as nodes.
 
-## 📄 License
+## License
 
 [MIT](LICENSE)
