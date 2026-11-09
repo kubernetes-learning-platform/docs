@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" class="sheet" role="img" aria-labelledby="st sd">
+<title id="st">Repos and packages</title>
+<desc id="sd">Repos and packages. Connections: contracts to sandbox (NuGet); sandbox to api (SandboxClient); contracts to api (NuGet); contracts to web (npm); platform to contracts; platform to sandbox; platform to api; platform to web.</desc>
+<style>
+.sheet{--paper:#EFCB86;--ink:#35250D;--soft:#6B4E1E;--fill:#F6DBA4;--grid:#C99F52;--pulse:#B4370C;}
+.sheet{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.paper{fill:var(--paper);stroke:var(--ink);stroke-width:3}
+.inner{fill:none;stroke:var(--ink);stroke-width:.8}
+.dot{fill:var(--grid)}
+.group{fill:none;stroke:var(--soft);stroke-width:1.2;stroke-dasharray:7 5}
+.mask{fill:var(--paper)}
+.box{fill:var(--fill);stroke:var(--ink);stroke-width:1.5}
+.box.ext{fill:var(--paper);stroke:var(--soft);stroke-dasharray:4 3}
+.box.pane{fill:var(--paper)}
+.bar{fill:var(--ink)}
+.line,.hair{fill:none;stroke:var(--ink);stroke-width:1.2}
+.hair{stroke:var(--soft);stroke-width:.8}
+.wire{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
+.wire.dash{stroke-dasharray:5 4}
+.head{fill:var(--ink)}
+.t{fill:var(--ink);font-size:13px;font-weight:700;text-anchor:middle;letter-spacing:.02em}
+.t.inv{fill:var(--paper)}
+.s{fill:var(--soft);font-size:10.5px;text-anchor:middle}
+.s.left,.s.code{text-anchor:start}
+.s.code{fill:var(--ink)}
+.l{fill:var(--ink);font-size:10.5px;text-anchor:middle}
+.num{fill:var(--paper);font-size:10.5px;font-weight:700;text-anchor:middle}
+.note{fill:var(--ink);font-size:12px;text-anchor:middle;letter-spacing:.02em}
+.cap{fill:var(--soft);font-size:9.5px;letter-spacing:.13em}
+.big{fill:var(--ink);font-size:16px;font-weight:700}
+.tb{fill:var(--paper);stroke:var(--ink);stroke-width:1.4}
+.chip{fill:var(--fill);stroke:var(--ink);stroke-width:1.1}
+.chip.on{fill:var(--ink)}
+.thin{fill:none;stroke:var(--soft);stroke-width:1}
+.pulse{fill:none;stroke:var(--pulse);stroke-width:3.2;stroke-linecap:round;stroke-dasharray:1.2 98.8;animation:flow 6s linear infinite}
+@keyframes flow{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.pulse{display:none}}
+</style>
+<defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle class="dot" cx="10" cy="10" r=".9"/></pattern><marker id="arrow" viewBox="0 0 8 8" refX="7.2" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path class="head" d="M0 .8 L7.6 4 L0 7.2z"/></marker></defs>
+<rect class="paper" x="1.5" y="1.5" width="997" height="557" rx="16"/>
+<rect fill="url(#dots)" x="10" y="10" width="980" height="540" rx="10"/>
+<rect class="inner" x="9.5" y="9.5" width="981" height="541" rx="10"/>
+<polyline class="wire" points="190,220 300,220" marker-end="url(#arrow)"/>
+<polyline class="wire" points="450,220 560,220" marker-end="url(#arrow)"/>
+<polyline class="wire" points="130,180 130,130 140,120 620,120 630,130 630,180" marker-end="url(#arrow)"/>
+<polyline class="wire" points="90,180 90,80 100,70 870,70 880,80 880,180" marker-end="url(#arrow)"/>
+<polyline class="wire dash" points="110,370 110,270" marker-end="url(#arrow)"/>
+<polyline class="wire dash" points="370,370 370,270" marker-end="url(#arrow)"/>
+<polyline class="wire dash" points="630,370 630,270" marker-end="url(#arrow)"/>
+<polyline class="wire dash" points="880,370 880,270" marker-end="url(#arrow)"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-0.00s" points="190,220 300,220"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-1.37s" points="450,220 560,220"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-2.74s" points="130,180 130,130 140,120 620,120 630,130 630,180"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-4.11s" points="90,180 90,80 100,70 870,70 880,80 880,180"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-5.48s" points="110,370 110,270"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-0.85s" points="370,370 370,270"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-2.22s" points="630,370 630,270"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-3.59s" points="880,370 880,270"/>
+<rect class="box own" x="40" y="180" width="150" height="90" rx="3"/><path class="bar" d="M43 180 h144 a3 3 0 0 1 3 3 v19 h-150 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="115.0" y="195.5">contracts</text><text class="s" x="115.0" y="232.5">the .proto schema</text><text class="s" x="115.0" y="245.5">NuGet + npm</text>
+<rect class="box own" x="300" y="180" width="150" height="90" rx="3"/><path class="bar" d="M303 180 h144 a3 3 0 0 1 3 3 v19 h-150 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="375.0" y="195.5">sandbox</text><text class="s" x="375.0" y="232.5">envmgr · harness</text><text class="s" x="375.0" y="245.5">SandboxClient</text>
+<rect class="box own" x="560" y="180" width="150" height="90" rx="3"/><path class="bar" d="M563 180 h144 a3 3 0 0 1 3 3 v19 h-150 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="635.0" y="195.5">api</text><text class="s" x="635.0" y="232.5">backend</text><text class="s" x="635.0" y="245.5">scenarios + helper</text>
+<rect class="box own" x="810" y="180" width="150" height="90" rx="3"/><path class="bar" d="M813 180 h144 a3 3 0 0 1 3 3 v19 h-150 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="885.0" y="195.5">web</text><text class="s" x="885.0" y="232.5">Next.js</text><text class="s" x="885.0" y="245.5">frontend</text>
+<rect class="box ext" x="40" y="370" width="920" height="70" rx="3"/><text class="t" x="500.0" y="402.5">platform</text><text class="s" x="500.0" y="416.5">reusable CI workflows · lint configs · infrastructure code · deploy files</text>
+<rect class="mask" x="224.0" y="211.0" width="42.0" height="18" rx="2"/>
+<text class="l" x="245.0" y="223.6">NuGet</text>
+<rect class="mask" x="458.4" y="211.0" width="93.3" height="18" rx="2"/>
+<text class="l" x="505.0" y="223.6">SandboxClient</text>
+<rect class="mask" x="349.0" y="111" width="42.0" height="18" rx="2"/>
+<text class="l" x="370.0" y="123.6">NuGet</text>
+<rect class="mask" x="485.4" y="61" width="29.2" height="18" rx="2"/>
+<text class="l" x="500.0" y="73.6">npm</text>
+<rect class="bar" x="28" y="505" width="26" height="14" rx="2"/>
+<text class="s left" x="62" y="516">product code</text>
+<rect class="box ext" x="160.86" y="505" width="26" height="14" rx="2"/>
+<text class="s left" x="194.86" y="516">shared tooling</text>
+<path class="wire" d="M306.53000000000003 512 h26" marker-end="url(#arrow)"/>
+<text class="s left" x="340.53000000000003" y="516">installs from</text>
+<path class="wire dash" d="M445.795 512 h26"/>
+<text class="s left" x="479.795" y="516">calls its CI</text>
+<rect class="tb" x="630" y="490" width="346" height="46"/><path class="line" d="M898 490 v46"/><text class="cap" x="640" y="505">KUBERNETES-LEARNING-PLATFORM / DOCS</text><text class="big" x="640" y="526">Repos and packages</text><text class="cap" x="908" y="505">SHEET</text><text class="big" x="908" y="526">2/10</text>
+</svg>

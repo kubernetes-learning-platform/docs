@@ -66,20 +66,10 @@ All six live in the GitHub organization [`kubernetes-learning-platform`](https:/
 | **`web`** | Next.js frontend | `web` image → GHCR | Person 3 |
 | **`platform`** | Reusable CI workflows, canonical lint configs, infrastructure code (OpenTofu), deploy files per machine (Compose with RabbitMQ, Caddyfile, envmgr unit, firewall rules, WireGuard and env examples), dev Compose | Nothing at runtime; other repos call its workflows | Filip |
 
-```mermaid
-flowchart LR
-    contracts["contracts<br/>proto + generated packages"]
-    sandbox["sandbox<br/>envmgr, harness, VM image"]
-    api["api<br/>backend + agent"]
-    web["web<br/>Next.js"]
-    platform["platform<br/>CI, lint, deploy"]
-
-    contracts -->|NuGet| sandbox
-    contracts -->|NuGet| api
-    contracts -->|npm| web
-    sandbox -->|"SandboxClient (NuGet)"| api
-    platform -.->|"reusable CI + lint configs"| contracts & sandbox & api & web
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/repos-dark.svg">
+  <img src="assets/diagrams/repos-light.svg" width="100%" alt="The five code repositories and the packages that connect them. Every repo calls the CI workflows in platform.">
+</picture>
 
 ### Why this shape (CALL)
 
@@ -102,38 +92,10 @@ flowchart LR
 
 ## 3. Runtime architecture
 
-```mermaid
-flowchart LR
-    laptop["Demo laptop<br/>browser"]
-    llm["LLM API"]
-
-    subgraph hetzner["Hetzner box · Docker Compose"]
-        proxy["proxy<br/>Caddy"]
-        web["web<br/>Next.js"]
-        api["api<br/>ASP.NET Core + agent"]
-        db[("Postgres<br/>users, sessions, progress, event log")]
-        mq["RabbitMQ<br/>start + teardown"]
-    end
-
-    subgraph home["Proxmox box (home)"]
-        envmgr["envmgr<br/>systemd on the host"]
-        subgraph vm["Sandbox VM (one per session)"]
-            harness["harness<br/>Native AOT"]
-            k3d["k3d cluster<br/>cp, w1, w2"]
-        end
-    end
-
-    laptop -->|"HTTPS over WireGuard"| proxy
-    proxy --> web
-    proxy -->|"REST + WebSocket (protobuf)"| api
-    api --> db
-    api -->|"start + teardown requests"| mq
-    api -->|HTTPS| llm
-    api -->|"gRPC over WireGuard"| envmgr
-    envmgr -->|"AMQP over WireGuard"| mq
-    harness -->|"WebSocket, isolated bridge"| envmgr
-    harness -->|"kubectl, docker, watches"| k3d
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/system-map-dark.svg">
+  <img src="assets/diagrams/system-map-light.svg" width="100%" alt="The runtime architecture: browser, the Compose stack on the Hetzner box, envmgr and the sandbox VMs on the Proxmox box, joined by the WireGuard mesh.">
+</picture>
 
 Everything in the brief's §2–§5 still holds, except hosting and the harness transport, which [ADR 0001](adr/0001-hosting-and-harness-transport.md) replaces, and the product shape, which [ADR 0002](adr/0002-learner-driven-scenarios-and-scale-target.md) replaces. Additions from this plan:
 
@@ -184,6 +146,11 @@ Everything in the brief's §2–§5 still holds, except hosting and the harness 
 ## 4. Services and their entry points
 
 ### 4.1 `api` — ASP.NET Core (.NET 10) · Person 2 + Filip
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/api-dark.svg">
+  <img src="assets/diagrams/api-light.svg" width="100%" alt="Inside the api process: controllers and the socket face the browser, LiveSession holds one running lab, EventFanout persists then broadcasts, and the Scenarios, Agent and SandboxClient libraries sit behind it.">
+</picture>
 
 **REST controllers** (JSON bodies, defined as Protobuf messages in `rest.proto`, serialized with proto3 JSON mapping, CALL):
 
@@ -248,6 +215,11 @@ scenario_progress (user_id, scenario_id, step_id, status, helper_demonstrated, u
 
 ### 4.2 `envmgr` — .NET 10 self-contained daemon on the Proxmox host · Filip
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/sandbox-dark.svg">
+  <img src="assets/diagrams/sandbox-light.svg" width="100%" alt="envmgr on the Proxmox host (gRPC service, relay, reconciler, queue consumers, providers) and the sandbox VM (harness, watchers, a three-node k3d cluster).">
+</picture>
+
 Runs as a systemd service directly on the Proxmox host (CALL, [ADR 0001](adr/0001-hosting-and-harness-transport.md)). Proxmox runs the VMs, so `envmgr` needs no `/dev/kvm`, no `/dev/net/tun` and no host network plumbing.
 
 No REST controllers. **One gRPC service** on the mesh address `10.66.0.2:7070` (CALL), accepted only from the Hetzner box:
@@ -307,6 +279,11 @@ No controllers. One connection, one **frame router**:
 
 ### 4.4 `web` — Next.js (App Router) · Person 3
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/web-dark.svg">
+  <img src="assets/diagrams/web-light.svg" width="100%" alt="The lab screen: socket.ts feeds a topology store and a view store, which together draw the canvas, next to the terminal, scenario panel, helper chat and config inspector.">
+</picture>
+
 No controllers or API routes. It's a pure client of `api` through the proxy.
 
 | Route | Screen |
@@ -333,6 +310,11 @@ The terminal and the editable inspector are the learner's, and read-only with a 
 
 ## 5. Contracts
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/contracts-dark.svg">
+  <img src="assets/diagrams/contracts-light.svg" width="100%" alt="Which proto file crosses which boundary, and which package each consumer installs.">
+</picture>
+
 ```
 proto/kubernetes_learning/v1/
   common.proto     ids, timestamps, error
@@ -357,6 +339,18 @@ The starting sketch in brief §5 maps directly onto these files.
 
 ## 6. Key flows
 
+Flow 1 and flows 3 to 4, drawn out:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/session-start-dark.svg">
+  <img src="assets/diagrams/session-start-light.svg" width="100%" alt="Starting a session in eight steps, through the RabbitMQ work queue.">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/two-streams-dark.svg">
+  <img src="assets/diagrams/two-streams-light.svg" width="100%" alt="The state stream from the cluster to the canvas, and the separate intent stream from the helper to the camera.">
+</picture>
+
 1. **Start a session.** web `POST /api/sessions` → `SessionService` creates a `queued` session → `ProvisionRequest` to RabbitMQ with a publisher confirm → `envmgr` takes it when it has room and uses a warm sandbox or clones one → `ProvisionResult` → api stores the host and opens `Connect` → harness sends `TopologySnapshot` → `TopologyCache`. With a scenario, `ScenarioRunner` then applies the first step. web opens `/ws/sessions/{id}` and receives `SessionStatus` (with its queue position while waiting), then the snapshot.
 2. **Scenario step.** `ScenarioRunner` applies the step's `start` (or `enter` when arriving from the previous step) and any `faults` → it runs the checks about every 3 seconds and on topology changes → once all pass, `ScenarioProgress` goes out and progress is saved → the panel shows **Next**, and nothing changes in the cluster until the learner sends `ScenarioNext`.
 3. **Two streams (DECIDED).** The canvas renders **only** from snapshot/diff, with the helper on or off. The camera moves **only** from `ViewIntent`. The helper's words never change the graph.
@@ -373,6 +367,11 @@ The starting sketch in brief §5 maps directly onto these files.
 ### 6.1 Who drives (DECIDED, [ADR 0002](adr/0002-learner-driven-scenarios-and-scale-target.md))
 
 The terminal and the editable config inspector belong to the learner by default. These states shape `session.proto`, which goes into contracts v0.1.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/helper-turn-dark.svg">
+  <img src="assets/diagrams/helper-turn-light.svg" width="100%" alt="The helper is idle, acting or waiting. A turn only starts from the learner's message or answer.">
+</picture>
 
 | Helper is | Terminal + inspector | Helper can use |
 |---|---|---|
@@ -392,6 +391,7 @@ docs/
 ├── FEATURES.md          # every feature: what the user sees + how it works
 ├── PROJECT-BRIEF.md     # the original brief
 ├── adr/                 # architecture decision records, one file per decision (0001: hosting + harness transport, 0002: learner-driven scenarios + scale target)
+├── assets/diagrams/     # generate.py and the SVG sheets it writes; edit the script, never an SVG
 └── LICENSE
 ```
 
@@ -514,6 +514,8 @@ web/
 ```
 platform/
 ├── .github/workflows/                             # all `on: workflow_call`
+│   ├── pr-title.yml           # Conventional Commit PR titles; also runs on platform's own PRs
+│   ├── copilot-review.yml     # one Copilot review per PR; also runs on platform's own PRs
 │   ├── dotnet-ci.yml          # format check, build, test
 │   ├── node-ci.yml            # eslint, prettier, typecheck, test, build
 │   ├── proto-ci.yml           # buf lint/breaking, generate, pack, publish
@@ -548,6 +550,11 @@ platform/
 ---
 
 ## 8. CI/CD & shared tooling (Filip)
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/platform-dark.svg">
+  <img src="assets/diagrams/platform-light.svg" width="100%" alt="Which reusable workflow ships what, and which machine it ends up on.">
+</picture>
 
 - **Reusable workflows** live in `platform/.github/workflows`. Each repo's `ci.yml` is a short `uses: kubernetes-learning-platform/platform/.github/workflows/dotnet-ci.yml@main`. If `platform` is private, set it to "accessible from repositories in the organization" under Actions settings.
 - **Lint** (CALL): C# uses `.editorconfig` + `dotnet format --verify-no-changes` + `TreatWarningsAsErrors` + `AnalysisLevel=latest-recommended`. TS uses ESLint flat config + Prettier + `tsc --noEmit`. Proto uses `buf lint`. Canonical copies live in `platform/lint/`, and the reusable CI fails if a repo's copy drifts.

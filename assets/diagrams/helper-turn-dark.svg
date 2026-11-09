@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" class="sheet" role="img" aria-labelledby="st sd">
+<title id="st">A helper turn</title>
+<desc id="sd">A helper turn. Connections: Idle to Acting (you send a message); Acting to Idle (turn ends, or Stop); Acting to Waiting (it asks a question); Waiting to Acting (you answer); Acting to Helper off (token budget spent).</desc>
+<style>
+.sheet{--paper:#16110A;--ink:#EDB95F;--soft:#B98C42;--fill:#211909;--grid:#4A3716;--pulse:#FFF3CF;}
+.sheet{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.paper{fill:var(--paper);stroke:var(--ink);stroke-width:3}
+.inner{fill:none;stroke:var(--ink);stroke-width:.8}
+.dot{fill:var(--grid)}
+.group{fill:none;stroke:var(--soft);stroke-width:1.2;stroke-dasharray:7 5}
+.mask{fill:var(--paper)}
+.box{fill:var(--fill);stroke:var(--ink);stroke-width:1.5}
+.box.ext{fill:var(--paper);stroke:var(--soft);stroke-dasharray:4 3}
+.box.pane{fill:var(--paper)}
+.bar{fill:var(--ink)}
+.line,.hair{fill:none;stroke:var(--ink);stroke-width:1.2}
+.hair{stroke:var(--soft);stroke-width:.8}
+.wire{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
+.wire.dash{stroke-dasharray:5 4}
+.head{fill:var(--ink)}
+.t{fill:var(--ink);font-size:13px;font-weight:700;text-anchor:middle;letter-spacing:.02em}
+.t.inv{fill:var(--paper)}
+.s{fill:var(--soft);font-size:10.5px;text-anchor:middle}
+.s.left,.s.code{text-anchor:start}
+.s.code{fill:var(--ink)}
+.l{fill:var(--ink);font-size:10.5px;text-anchor:middle}
+.num{fill:var(--paper);font-size:10.5px;font-weight:700;text-anchor:middle}
+.note{fill:var(--ink);font-size:12px;text-anchor:middle;letter-spacing:.02em}
+.cap{fill:var(--soft);font-size:9.5px;letter-spacing:.13em}
+.big{fill:var(--ink);font-size:16px;font-weight:700}
+.tb{fill:var(--paper);stroke:var(--ink);stroke-width:1.4}
+.chip{fill:var(--fill);stroke:var(--ink);stroke-width:1.1}
+.chip.on{fill:var(--ink)}
+.thin{fill:none;stroke:var(--soft);stroke-width:1}
+.pulse{fill:none;stroke:var(--pulse);stroke-width:3.2;stroke-linecap:round;stroke-dasharray:1.2 98.8;animation:flow 6s linear infinite}
+@keyframes flow{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.pulse{display:none}}
+</style>
+<defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle class="dot" cx="10" cy="10" r=".9"/></pattern><marker id="arrow" viewBox="0 0 8 8" refX="7.2" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path class="head" d="M0 .8 L7.6 4 L0 7.2z"/></marker></defs>
+<rect class="paper" x="1.5" y="1.5" width="997" height="557" rx="16"/>
+<rect fill="url(#dots)" x="10" y="10" width="980" height="540" rx="10"/>
+<rect class="inner" x="9.5" y="9.5" width="981" height="541" rx="10"/>
+<polyline class="wire" points="240,200 410,200" marker-end="url(#arrow)"/>
+<polyline class="wire" points="410,260 240,260" marker-end="url(#arrow)"/>
+<polyline class="wire" points="590,200 760,200" marker-end="url(#arrow)"/>
+<polyline class="wire" points="760,260 590,260" marker-end="url(#arrow)"/>
+<polyline class="wire" points="500,290 500,370" marker-end="url(#arrow)"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-0.00s" points="240,200 410,200"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-1.37s" points="410,260 240,260"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-2.74s" points="590,200 760,200"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-4.11s" points="760,260 590,260"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-5.48s" points="500,290 500,370"/>
+<rect class="box part" x="60" y="170" width="180" height="120" rx="3"/><text class="t" x="150.0" y="221.0">Idle</text><text class="s" x="150.0" y="235.0">terminal: yours</text><text class="s" x="150.0" y="248.0">helper: silent</text>
+<rect class="box own" x="410" y="170" width="180" height="120" rx="3"/><path class="bar" d="M413 170 h174 a3 3 0 0 1 3 3 v19 h-180 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="500.0" y="185.5">Acting</text><text class="s" x="500.0" y="231.0">terminal: read-only</text><text class="s" x="500.0" y="244.0">commands show as agent$</text><text class="s" x="500.0" y="257.0">Stop is available</text>
+<rect class="box part" x="760" y="170" width="180" height="120" rx="3"/><text class="t" x="850.0" y="221.0">Waiting</text><text class="s" x="850.0" y="235.0">terminal: yours</text><text class="s" x="850.0" y="248.0">a question card is open</text>
+<rect class="box ext" x="410" y="370" width="180" height="70" rx="3"/><text class="t" x="500.0" y="402.5">Helper off</text><text class="s" x="500.0" y="416.5">the scenario carries on</text>
+<rect class="mask" x="262.4" y="191.0" width="125.3" height="18" rx="2"/>
+<text class="l" x="325.0" y="203.6">you send a message</text>
+<rect class="mask" x="262.4" y="251.0" width="125.3" height="18" rx="2"/>
+<text class="l" x="325.0" y="263.6">turn ends, or Stop</text>
+<rect class="mask" x="612.4" y="191.0" width="125.3" height="18" rx="2"/>
+<text class="l" x="675.0" y="203.6">it asks a question</text>
+<rect class="mask" x="638.0" y="251.0" width="74.0" height="18" rx="2"/>
+<text class="l" x="675.0" y="263.6">you answer</text>
+<rect class="mask" x="437.4" y="321.0" width="125.3" height="18" rx="2"/>
+<text class="l" x="500.0" y="333.6">token budget spent</text>
+<text class="note" x="500" y="105">A turn only ever starts from your message or your answer.</text>
+<rect class="box part" x="28" y="505" width="26" height="14" rx="2"/>
+<text class="s left" x="62" y="516">you drive</text>
+<rect class="bar" x="141.64499999999998" y="505" width="26" height="14" rx="2"/>
+<text class="s left" x="175.64499999999998" y="516">the helper drives</text>
+<rect class="box ext" x="306.53" y="505" width="26" height="14" rx="2"/>
+<text class="s left" x="340.53" y="516">the helper is off</text>
+<rect class="tb" x="630" y="490" width="346" height="46"/><path class="line" d="M898 490 v46"/><text class="cap" x="640" y="505">KUBERNETES-LEARNING-PLATFORM / DOCS</text><text class="big" x="640" y="526">A helper turn</text><text class="cap" x="908" y="505">SHEET</text><text class="big" x="908" y="526">5/10</text>
+</svg>

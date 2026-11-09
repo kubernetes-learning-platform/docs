@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" class="sheet" role="img" aria-labelledby="st sd">
+<title id="st">Starting a session</title>
+<desc id="sd">Starting a session. Connections: Browser to api (Start); api to RabbitMQ (request); RabbitMQ to envmgr (when there is room); envmgr to Sandbox VM (warm VM or clone); envmgr to RabbitMQ (result); RabbitMQ to api; api to envmgr (Connect); Sandbox VM to envmgr (first snapshot); envmgr to api (snapshot); api to Browser (live).</desc>
+<style>
+.sheet{--paper:#16110A;--ink:#EDB95F;--soft:#B98C42;--fill:#211909;--grid:#4A3716;--pulse:#FFF3CF;}
+.sheet{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.paper{fill:var(--paper);stroke:var(--ink);stroke-width:3}
+.inner{fill:none;stroke:var(--ink);stroke-width:.8}
+.dot{fill:var(--grid)}
+.group{fill:none;stroke:var(--soft);stroke-width:1.2;stroke-dasharray:7 5}
+.mask{fill:var(--paper)}
+.box{fill:var(--fill);stroke:var(--ink);stroke-width:1.5}
+.box.ext{fill:var(--paper);stroke:var(--soft);stroke-dasharray:4 3}
+.box.pane{fill:var(--paper)}
+.bar{fill:var(--ink)}
+.line,.hair{fill:none;stroke:var(--ink);stroke-width:1.2}
+.hair{stroke:var(--soft);stroke-width:.8}
+.wire{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
+.wire.dash{stroke-dasharray:5 4}
+.head{fill:var(--ink)}
+.t{fill:var(--ink);font-size:13px;font-weight:700;text-anchor:middle;letter-spacing:.02em}
+.t.inv{fill:var(--paper)}
+.s{fill:var(--soft);font-size:10.5px;text-anchor:middle}
+.s.left,.s.code{text-anchor:start}
+.s.code{fill:var(--ink)}
+.l{fill:var(--ink);font-size:10.5px;text-anchor:middle}
+.num{fill:var(--paper);font-size:10.5px;font-weight:700;text-anchor:middle}
+.note{fill:var(--ink);font-size:12px;text-anchor:middle;letter-spacing:.02em}
+.cap{fill:var(--soft);font-size:9.5px;letter-spacing:.13em}
+.big{fill:var(--ink);font-size:16px;font-weight:700}
+.tb{fill:var(--paper);stroke:var(--ink);stroke-width:1.4}
+.chip{fill:var(--fill);stroke:var(--ink);stroke-width:1.1}
+.chip.on{fill:var(--ink)}
+.thin{fill:none;stroke:var(--soft);stroke-width:1}
+.pulse{fill:none;stroke:var(--pulse);stroke-width:3.2;stroke-linecap:round;stroke-dasharray:1.2 98.8;animation:flow 6s linear infinite}
+@keyframes flow{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.pulse{display:none}}
+</style>
+<defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle class="dot" cx="10" cy="10" r=".9"/></pattern><marker id="arrow" viewBox="0 0 8 8" refX="7.2" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path class="head" d="M0 .8 L7.6 4 L0 7.2z"/></marker></defs>
+<rect class="paper" x="1.5" y="1.5" width="997" height="557" rx="16"/>
+<rect fill="url(#dots)" x="10" y="10" width="980" height="540" rx="10"/>
+<rect class="inner" x="9.5" y="9.5" width="981" height="541" rx="10"/>
+<rect class="group" x="210" y="50" width="200" height="410" rx="8"/><rect class="mask" x="222" y="43" width="89" height="14"/><text class="cap" x="229" y="53.5">HETZNER BOX</text>
+<rect class="group" x="470" y="50" width="500" height="410" rx="8"/><rect class="mask" x="482" y="43" width="89" height="14"/><text class="cap" x="489" y="53.5">PROXMOX BOX</text>
+<polyline class="wire" points="130,170 240,170" marker-end="url(#arrow)"/>
+<polyline class="wire dash" points="280,260 280,350" marker-end="url(#arrow)"/>
+<polyline class="wire dash" points="380,370 540,370 550,360 550,260" marker-end="url(#arrow)"/>
+<polyline class="wire" points="650,170 800,170" marker-end="url(#arrow)"/>
+<polyline class="wire dash" points="610,260 610,390 600,400 380,400" marker-end="url(#arrow)"/>
+<polyline class="wire dash" points="340,350 340,260" marker-end="url(#arrow)"/>
+<polyline class="wire" points="380,170 510,170" marker-end="url(#arrow)"/>
+<polyline class="wire" points="800,230 650,230" marker-end="url(#arrow)"/>
+<polyline class="wire" points="510,230 380,230" marker-end="url(#arrow)"/>
+<polyline class="wire" points="240,230 130,230" marker-end="url(#arrow)"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-0.00s" points="130,170 240,170"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-1.37s" points="280,260 280,350"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-2.74s" points="380,370 540,370 550,360 550,260"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-4.11s" points="650,170 800,170"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-5.48s" points="610,260 610,390 600,400 380,400"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-0.85s" points="340,350 340,260"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-2.22s" points="380,170 510,170"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-3.59s" points="800,230 650,230"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-4.96s" points="510,230 380,230"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-0.33s" points="240,230 130,230"/>
+<rect class="box ext" x="30" y="140" width="100" height="120" rx="3"/><text class="t" x="80.0" y="204.0">Browser</text>
+<rect class="box own" x="240" y="140" width="140" height="120" rx="3"/><path class="bar" d="M243 140 h134 a3 3 0 0 1 3 3 v19 h-140 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="310.0" y="155.5">api</text><text class="s" x="310.0" y="207.5">creates the</text><text class="s" x="310.0" y="220.5">session</text>
+<rect class="box part" x="240" y="350" width="140" height="70" rx="3"/><text class="t" x="310.0" y="382.5">RabbitMQ</text><text class="s" x="310.0" y="396.5">work queue</text>
+<rect class="box own" x="510" y="140" width="140" height="120" rx="3"/><path class="bar" d="M513 140 h134 a3 3 0 0 1 3 3 v19 h-140 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="580.0" y="155.5">envmgr</text><text class="s" x="580.0" y="207.5">capacity cap</text><text class="s" x="580.0" y="220.5">warm pool</text>
+<rect class="box own" x="800" y="140" width="140" height="120" rx="3"/><path class="bar" d="M803 140 h134 a3 3 0 0 1 3 3 v19 h-140 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="870.0" y="155.5">Sandbox VM</text><text class="s" x="870.0" y="207.5">harness</text><text class="s" x="870.0" y="220.5">cp · w1 · w2</text>
+<rect class="mask" x="154.0" y="161.0" width="62.0" height="18" rx="2"/>
+<circle class="bar" cx="164.0" cy="170.0" r="8.5"/><text class="num" x="164.0" y="173.6">1</text>
+<text class="l" x="195.0" y="173.6">Start</text>
+<rect class="mask" x="242.6" y="296.0" width="74.8" height="18" rx="2"/>
+<circle class="bar" cx="252.6" cy="305.0" r="8.5"/><text class="num" x="252.6" y="308.6">2</text>
+<text class="l" x="290.0" y="308.6">request</text>
+<rect class="mask" x="387.4" y="361.0" width="145.3" height="18" rx="2"/>
+<circle class="bar" cx="397.4" cy="370.0" r="8.5"/><text class="num" x="397.4" y="373.6">3</text>
+<text class="l" x="470.0" y="373.6">when there is room</text>
+<rect class="mask" x="658.8" y="161.0" width="132.5" height="18" rx="2"/>
+<circle class="bar" cx="668.8" cy="170.0" r="8.5"/><text class="num" x="668.8" y="173.6">4</text>
+<text class="l" x="735.0" y="173.6">warm VM or clone</text>
+<rect class="mask" x="455.8" y="391.0" width="68.4" height="18" rx="2"/>
+<circle class="bar" cx="465.8" cy="400.0" r="8.5"/><text class="num" x="465.8" y="403.6">5</text>
+<text class="l" x="500.0" y="403.6">result</text>
+<rect class="mask" x="330.0" y="296.0" width="20.0" height="18" rx="2"/>
+<circle class="bar" cx="340.0" cy="305.0" r="8.5"/><text class="num" x="340.0" y="308.6">5</text>
+<text class="l" x="350.0" y="308.6"></text>
+<rect class="mask" x="407.6" y="161.0" width="74.8" height="18" rx="2"/>
+<circle class="bar" cx="417.6" cy="170.0" r="8.5"/><text class="num" x="417.6" y="173.6">6</text>
+<text class="l" x="455.0" y="173.6">Connect</text>
+<rect class="mask" x="665.2" y="221.0" width="119.7" height="18" rx="2"/>
+<circle class="bar" cx="675.2" cy="230.0" r="8.5"/><text class="num" x="675.2" y="233.6">7</text>
+<text class="l" x="735.0" y="233.6">first snapshot</text>
+<rect class="mask" x="404.4" y="221.0" width="81.2" height="18" rx="2"/>
+<circle class="bar" cx="414.4" cy="230.0" r="8.5"/><text class="num" x="414.4" y="233.6">7</text>
+<text class="l" x="455.0" y="233.6">snapshot</text>
+<rect class="mask" x="157.2" y="221.0" width="55.6" height="18" rx="2"/>
+<circle class="bar" cx="167.2" cy="230.0" r="8.5"/><text class="num" x="167.2" y="233.6">8</text>
+<text class="l" x="195.0" y="233.6">live</text>
+<rect class="bar" x="28" y="505" width="26" height="14" rx="2"/>
+<text class="s left" x="62" y="516">we write it</text>
+<rect class="box part" x="154.45499999999998" y="505" width="26" height="14" rx="2"/>
+<text class="s left" x="188.45499999999998" y="516">off the shelf</text>
+<rect class="box ext" x="293.71999999999997" y="505" width="26" height="14" rx="2"/>
+<text class="s left" x="327.71999999999997" y="516">outside</text>
+<path class="wire dash" d="M394.55499999999995 512 h26"/>
+<text class="s left" x="428.55499999999995" y="516">work queue</text>
+<rect class="tb" x="630" y="490" width="346" height="46"/><path class="line" d="M898 490 v46"/><text class="cap" x="640" y="505">KUBERNETES-LEARNING-PLATFORM / DOCS</text><text class="big" x="640" y="526">Starting a session</text><text class="cap" x="908" y="505">SHEET</text><text class="big" x="908" y="526">3/10</text>
+</svg>

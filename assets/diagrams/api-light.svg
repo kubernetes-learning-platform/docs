@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" class="sheet" role="img" aria-labelledby="st sd">
+<title id="st">Inside api</title>
+<desc id="sd">Inside api. Connections: Browser to Controllers (REST); Browser to Socket (WS); Socket to LiveSession; LiveSession to Scenarios; LiveSession to Agent; LiveSession to SandboxClient; LiveSession to EventFanout (events); EventFanout to Socket (seq); EventFanout to Postgres (append); LiveSession to Provisioner; Agent to LLM API (HTTPS); SandboxClient to envmgr (gRPC); Provisioner to RabbitMQ (start · teardown).</desc>
+<style>
+.sheet{--paper:#EFCB86;--ink:#35250D;--soft:#6B4E1E;--fill:#F6DBA4;--grid:#C99F52;--pulse:#B4370C;}
+.sheet{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.paper{fill:var(--paper);stroke:var(--ink);stroke-width:3}
+.inner{fill:none;stroke:var(--ink);stroke-width:.8}
+.dot{fill:var(--grid)}
+.group{fill:none;stroke:var(--soft);stroke-width:1.2;stroke-dasharray:7 5}
+.mask{fill:var(--paper)}
+.box{fill:var(--fill);stroke:var(--ink);stroke-width:1.5}
+.box.ext{fill:var(--paper);stroke:var(--soft);stroke-dasharray:4 3}
+.box.pane{fill:var(--paper)}
+.bar{fill:var(--ink)}
+.line,.hair{fill:none;stroke:var(--ink);stroke-width:1.2}
+.hair{stroke:var(--soft);stroke-width:.8}
+.wire{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
+.wire.dash{stroke-dasharray:5 4}
+.head{fill:var(--ink)}
+.t{fill:var(--ink);font-size:13px;font-weight:700;text-anchor:middle;letter-spacing:.02em}
+.t.inv{fill:var(--paper)}
+.s{fill:var(--soft);font-size:10.5px;text-anchor:middle}
+.s.left,.s.code{text-anchor:start}
+.s.code{fill:var(--ink)}
+.l{fill:var(--ink);font-size:10.5px;text-anchor:middle}
+.num{fill:var(--paper);font-size:10.5px;font-weight:700;text-anchor:middle}
+.note{fill:var(--ink);font-size:12px;text-anchor:middle;letter-spacing:.02em}
+.cap{fill:var(--soft);font-size:9.5px;letter-spacing:.13em}
+.big{fill:var(--ink);font-size:16px;font-weight:700}
+.tb{fill:var(--paper);stroke:var(--ink);stroke-width:1.4}
+.chip{fill:var(--fill);stroke:var(--ink);stroke-width:1.1}
+.chip.on{fill:var(--ink)}
+.thin{fill:none;stroke:var(--soft);stroke-width:1}
+.pulse{fill:none;stroke:var(--pulse);stroke-width:3.2;stroke-linecap:round;stroke-dasharray:1.2 98.8;animation:flow 6s linear infinite}
+@keyframes flow{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.pulse{display:none}}
+</style>
+<defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle class="dot" cx="10" cy="10" r=".9"/></pattern><marker id="arrow" viewBox="0 0 8 8" refX="7.2" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path class="head" d="M0 .8 L7.6 4 L0 7.2z"/></marker></defs>
+<rect class="paper" x="1.5" y="1.5" width="997" height="557" rx="16"/>
+<rect fill="url(#dots)" x="10" y="10" width="980" height="540" rx="10"/>
+<rect class="inner" x="9.5" y="9.5" width="981" height="541" rx="10"/>
+<rect class="group" x="190" y="50" width="550" height="410" rx="8"/><rect class="mask" x="202" y="43" width="237" height="14"/><text class="cap" x="209" y="53.5">API · ASP.NET CORE · ONE PROCESS</text>
+<polyline class="wire" points="140,120 220,120" marker-end="url(#arrow)"/>
+<polyline class="wire" points="140,240 220,240" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<polyline class="wire" points="360,240 390,240 400,250 410,250" marker-end="url(#arrow)"/>
+<polyline class="wire" points="470,210 470,160" marker-end="url(#arrow)"/>
+<polyline class="wire" points="540,230 550,230 560,220 560,130 570,120 580,120" marker-end="url(#arrow)"/>
+<polyline class="wire" points="540,260 580,260" marker-end="url(#arrow)"/>
+<polyline class="wire" points="440,290 440,310 430,320 390,320 380,330 380,370 370,380 360,380" marker-end="url(#arrow)"/>
+<polyline class="wire" points="290,340 290,280" marker-end="url(#arrow)"/>
+<polyline class="wire" points="220,380 140,380" marker-end="url(#arrow)"/>
+<polyline class="wire" points="490,290 490,350" marker-end="url(#arrow)"/>
+<polyline class="wire" points="710,120 810,120" marker-end="url(#arrow)"/>
+<polyline class="wire" points="710,250 810,250" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<polyline class="wire dash" points="540,380 810,380" marker-end="url(#arrow)"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-0.00s" points="140,120 220,120"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-1.37s" points="140,240 220,240"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-2.74s" points="360,240 390,240 400,250 410,250"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-4.11s" points="470,210 470,160"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-5.48s" points="540,230 550,230 560,220 560,130 570,120 580,120"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-0.85s" points="540,260 580,260"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-2.22s" points="440,290 440,310 430,320 390,320 380,330 380,370 370,380 360,380"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-3.59s" points="290,340 290,280"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-4.96s" points="220,380 140,380"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-0.33s" points="490,290 490,350"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-1.70s" points="710,120 810,120"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-3.07s" points="710,250 810,250"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-4.44s" points="540,380 810,380"/>
+<rect class="box ext" x="30" y="80" width="110" height="180" rx="3"/><text class="t" x="85.0" y="174.0">Browser</text>
+<path class="box ext" d="M30 347 a55.0 7 0 0 1 110 0 v66 a55.0 7 0 0 1 -110 0 z"/><path class="line" d="M30 347 a55.0 7 0 0 0 110 0"/><text class="t" x="85.0" y="388.0">Postgres</text>
+<rect class="box own" x="220" y="80" width="140" height="80" rx="3"/><path class="bar" d="M223 80 h134 a3 3 0 0 1 3 3 v19 h-140 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="290.0" y="95.5">Controllers</text><text class="s" x="290.0" y="127.5">Auth · Sessions</text><text class="s" x="290.0" y="140.5">Scenarios · Events</text>
+<rect class="box own" x="220" y="210" width="140" height="70" rx="3"/><path class="bar" d="M223 210 h134 a3 3 0 0 1 3 3 v19 h-140 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="290.0" y="225.5">Socket</text><text class="s" x="290.0" y="259.0">/ws/sessions/{id}</text>
+<rect class="box own" x="220" y="340" width="140" height="80" rx="3"/><path class="bar" d="M223 340 h134 a3 3 0 0 1 3 3 v19 h-140 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="290.0" y="355.5">EventFanout</text><text class="s" x="290.0" y="387.5">persist,</text><text class="s" x="290.0" y="400.5">then broadcast</text>
+<rect class="box part" x="410" y="80" width="130" height="80" rx="3"/><text class="t" x="475.0" y="111.0">Scenarios</text><text class="s" x="475.0" y="125.0">runner · checks</text><text class="s" x="475.0" y="138.0">no LLM</text>
+<rect class="box own" x="410" y="210" width="130" height="80" rx="3"/><path class="bar" d="M413 210 h124 a3 3 0 0 1 3 3 v19 h-130 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="475.0" y="225.5">LiveSession</text><text class="s" x="475.0" y="257.5">one per</text><text class="s" x="475.0" y="270.5">session</text>
+<rect class="box own" x="410" y="350" width="130" height="70" rx="3"/><path class="bar" d="M413 350 h124 a3 3 0 0 1 3 3 v19 h-130 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="475.0" y="365.5">Provisioner</text><text class="s" x="475.0" y="399.0">queue + fake</text>
+<rect class="box part" x="580" y="80" width="130" height="80" rx="3"/><text class="t" x="645.0" y="111.0">Agent</text><text class="s" x="645.0" y="125.0">helper loop</text><text class="s" x="645.0" y="138.0">typed tools</text>
+<rect class="box part" x="580" y="210" width="130" height="80" rx="3"/><text class="t" x="645.0" y="247.5">SandboxClient</text><text class="s" x="645.0" y="261.5">ISandboxSession</text>
+<rect class="box ext" x="810" y="90" width="130" height="60" rx="3"/><text class="t" x="875.0" y="124.0">LLM API</text>
+<rect class="box ext" x="810" y="210" width="130" height="80" rx="3"/><text class="t" x="875.0" y="247.5">envmgr</text><text class="s" x="875.0" y="261.5">Proxmox box</text>
+<rect class="box ext" x="810" y="350" width="130" height="70" rx="3"/><text class="t" x="875.0" y="389.0">RabbitMQ</text>
+<rect class="mask" x="162.2" y="111.0" width="35.6" height="18" rx="2"/>
+<text class="l" x="180.0" y="123.6">REST</text>
+<rect class="mask" x="168.6" y="231.0" width="22.8" height="18" rx="2"/>
+<text class="l" x="180.0" y="243.6">WS</text>
+<rect class="mask" x="360.8" y="341" width="48.4" height="18" rx="2"/>
+<text class="l" x="385.0" y="353.6">events</text>
+<rect class="mask" x="275.4" y="301.0" width="29.2" height="18" rx="2"/>
+<text class="l" x="290.0" y="313.6">seq</text>
+<rect class="mask" x="155.8" y="371.0" width="48.4" height="18" rx="2"/>
+<text class="l" x="180.0" y="383.6">append</text>
+<rect class="mask" x="739.0" y="111.0" width="42.0" height="18" rx="2"/>
+<text class="l" x="760.0" y="123.6">HTTPS</text>
+<rect class="mask" x="742.2" y="241.0" width="35.6" height="18" rx="2"/>
+<text class="l" x="760.0" y="253.6">gRPC</text>
+<rect class="mask" x="618.8" y="371.0" width="112.5" height="18" rx="2"/>
+<text class="l" x="675.0" y="383.6">start · teardown</text>
+<rect class="bar" x="28" y="505" width="26" height="14" rx="2"/>
+<text class="s left" x="62" y="516">KubernetesLearning.Api</text>
+<rect class="box part" x="224.91" y="505" width="26" height="14" rx="2"/>
+<text class="s left" x="258.90999999999997" y="516">library</text>
+<rect class="box ext" x="325.745" y="505" width="26" height="14" rx="2"/>
+<text class="s left" x="359.745" y="516">outside</text>
+<path class="wire dash" d="M426.58000000000004 512 h26"/>
+<text class="s left" x="460.58000000000004" y="516">work queue</text>
+<rect class="tb" x="637" y="490" width="339" height="46"/><path class="line" d="M898 490 v46"/><text class="cap" x="647" y="505">KUBERNETES-LEARNING-PLATFORM / API</text><text class="big" x="647" y="526">Inside api</text><text class="cap" x="908" y="505">SHEET</text><text class="big" x="908" y="526">8/10</text>
+</svg>

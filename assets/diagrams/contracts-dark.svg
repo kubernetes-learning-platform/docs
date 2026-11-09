@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" class="sheet" role="img" aria-labelledby="st sd">
+<title id="st">One schema, every boundary</title>
+<desc id="sd">One schema, every boundary. Connections: proto/kubernetes_learning/v1 to web (npm); proto/kubernetes_learning/v1 to api (NuGet); proto/kubernetes_learning/v1 to envmgr (NuGet); proto/kubernetes_learning/v1 to harness (NuGet); web to api (session · WS); web to api (rest · HTTP); api to envmgr (envmgr · gRPC); envmgr to harness (harness · WS); api to RabbitMQ (jobs); RabbitMQ to envmgr (AMQP).</desc>
+<style>
+.sheet{--paper:#16110A;--ink:#EDB95F;--soft:#B98C42;--fill:#211909;--grid:#4A3716;--pulse:#FFF3CF;}
+.sheet{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+.paper{fill:var(--paper);stroke:var(--ink);stroke-width:3}
+.inner{fill:none;stroke:var(--ink);stroke-width:.8}
+.dot{fill:var(--grid)}
+.group{fill:none;stroke:var(--soft);stroke-width:1.2;stroke-dasharray:7 5}
+.mask{fill:var(--paper)}
+.box{fill:var(--fill);stroke:var(--ink);stroke-width:1.5}
+.box.ext{fill:var(--paper);stroke:var(--soft);stroke-dasharray:4 3}
+.box.pane{fill:var(--paper)}
+.bar{fill:var(--ink)}
+.line,.hair{fill:none;stroke:var(--ink);stroke-width:1.2}
+.hair{stroke:var(--soft);stroke-width:.8}
+.wire{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
+.wire.dash{stroke-dasharray:5 4}
+.head{fill:var(--ink)}
+.t{fill:var(--ink);font-size:13px;font-weight:700;text-anchor:middle;letter-spacing:.02em}
+.t.inv{fill:var(--paper)}
+.s{fill:var(--soft);font-size:10.5px;text-anchor:middle}
+.s.left,.s.code{text-anchor:start}
+.s.code{fill:var(--ink)}
+.l{fill:var(--ink);font-size:10.5px;text-anchor:middle}
+.num{fill:var(--paper);font-size:10.5px;font-weight:700;text-anchor:middle}
+.note{fill:var(--ink);font-size:12px;text-anchor:middle;letter-spacing:.02em}
+.cap{fill:var(--soft);font-size:9.5px;letter-spacing:.13em}
+.big{fill:var(--ink);font-size:16px;font-weight:700}
+.tb{fill:var(--paper);stroke:var(--ink);stroke-width:1.4}
+.chip{fill:var(--fill);stroke:var(--ink);stroke-width:1.1}
+.chip.on{fill:var(--ink)}
+.thin{fill:none;stroke:var(--soft);stroke-width:1}
+.pulse{fill:none;stroke:var(--pulse);stroke-width:3.2;stroke-linecap:round;stroke-dasharray:1.2 98.8;animation:flow 6s linear infinite}
+@keyframes flow{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.pulse{display:none}}
+</style>
+<defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle class="dot" cx="10" cy="10" r=".9"/></pattern><marker id="arrow" viewBox="0 0 8 8" refX="7.2" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path class="head" d="M0 .8 L7.6 4 L0 7.2z"/></marker></defs>
+<rect class="paper" x="1.5" y="1.5" width="997" height="557" rx="16"/>
+<rect fill="url(#dots)" x="10" y="10" width="980" height="540" rx="10"/>
+<rect class="inner" x="9.5" y="9.5" width="981" height="541" rx="10"/>
+<polyline class="wire dash" points="270,90 110,90 100,100 100,260" marker-end="url(#arrow)"/>
+<polyline class="wire dash" points="400,140 400,220 370,250 370,260" marker-end="url(#arrow)"/>
+<polyline class="wire dash" points="600,140 600,210 640,250 640,260" marker-end="url(#arrow)"/>
+<polyline class="wire dash" points="730,90 890,90 900,100 900,260" marker-end="url(#arrow)"/>
+<polyline class="wire" points="170,280 310,280" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<polyline class="wire" points="170,320 310,320" marker-end="url(#arrow)"/>
+<polyline class="wire" points="440,300 580,300" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<polyline class="wire" points="710,300 840,300" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<polyline class="wire" points="370,340 370,420 380,430 450,430" marker-end="url(#arrow)"/>
+<polyline class="wire" points="570,430 630,430 640,420 640,340" marker-end="url(#arrow)"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-0.00s" points="270,90 110,90 100,100 100,260"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-1.37s" points="400,140 400,220 370,250 370,260"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-2.74s" points="600,140 600,210 640,250 640,260"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-4.11s" points="730,90 890,90 900,100 900,260"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-5.48s" points="170,280 310,280"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-0.85s" points="170,320 310,320"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-2.22s" points="440,300 580,300"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-3.59s" points="710,300 840,300"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-4.96s" points="370,340 370,420 380,430 450,430"/>
+<polyline class="pulse" pathLength="100" style="animation-delay:-0.33s" points="570,430 630,430 640,420 640,340"/>
+<rect class="box own" x="270" y="50" width="460" height="90" rx="3"/><path class="bar" d="M273 50 h454 a3 3 0 0 1 3 3 v19 h-460 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="500.0" y="65.5">proto/kubernetes_learning/v1</text><text class="s" x="500.0" y="109.0">common · envmgr · harness · topology · view · session · rest · jobs</text>
+<rect class="box part" x="40" y="260" width="130" height="80" rx="3"/><text class="t" x="105.0" y="297.5">web</text><text class="s" x="105.0" y="311.5">browser</text>
+<rect class="box part" x="310" y="260" width="130" height="80" rx="3"/><text class="t" x="375.0" y="297.5">api</text><text class="s" x="375.0" y="311.5">Hetzner box</text>
+<rect class="box part" x="580" y="260" width="130" height="80" rx="3"/><text class="t" x="645.0" y="297.5">envmgr</text><text class="s" x="645.0" y="311.5">Proxmox host</text>
+<rect class="box part" x="840" y="260" width="120" height="80" rx="3"/><text class="t" x="900.0" y="297.5">harness</text><text class="s" x="900.0" y="311.5">sandbox VM</text>
+<rect class="box part" x="450" y="400" width="120" height="60" rx="3"/><text class="t" x="510.0" y="434.0">RabbitMQ</text>
+<rect class="mask" x="90.4" y="171" width="29.2" height="18" rx="2"/>
+<text class="l" x="105.0" y="183.6">npm</text>
+<rect class="mask" x="354.0" y="191" width="42.0" height="18" rx="2"/>
+<text class="l" x="375.0" y="203.6">NuGet</text>
+<rect class="mask" x="624.0" y="191" width="42.0" height="18" rx="2"/>
+<text class="l" x="645.0" y="203.6">NuGet</text>
+<rect class="mask" x="879.0" y="171" width="42.0" height="18" rx="2"/>
+<text class="l" x="900.0" y="183.6">NuGet</text>
+<rect class="mask" x="196.6" y="271.0" width="86.9" height="18" rx="2"/>
+<text class="l" x="240.0" y="283.6">session · WS</text>
+<rect class="mask" x="199.8" y="311.0" width="80.5" height="18" rx="2"/>
+<text class="l" x="240.0" y="323.6">rest · HTTP</text>
+<rect class="mask" x="463.4" y="291.0" width="93.3" height="18" rx="2"/>
+<text class="l" x="510.0" y="303.6">envmgr · gRPC</text>
+<rect class="mask" x="731.6" y="291.0" width="86.9" height="18" rx="2"/>
+<text class="l" x="775.0" y="303.6">harness · WS</text>
+<rect class="mask" x="357.2" y="381" width="35.6" height="18" rx="2"/>
+<text class="l" x="375.0" y="393.6">jobs</text>
+<rect class="mask" x="627.2" y="381" width="35.6" height="18" rx="2"/>
+<text class="l" x="645.0" y="393.6">AMQP</text>
+<rect class="bar" x="28" y="505" width="26" height="14" rx="2"/>
+<text class="s left" x="62" y="516">this repo</text>
+<rect class="box part" x="141.64499999999998" y="505" width="26" height="14" rx="2"/>
+<text class="s left" x="175.64499999999998" y="516">consumer</text>
+<path class="wire" d="M248.885 512 h26" marker-end="url(#arrow)"/>
+<text class="s left" x="282.885" y="516">a boundary and its .proto</text>
+<path class="wire dash" d="M465.01 512 h26"/>
+<text class="s left" x="499.01" y="516">package</text>
+<rect class="tb" x="595" y="490" width="381" height="46"/><path class="line" d="M898 490 v46"/><text class="cap" x="605" y="505">KUBERNETES-LEARNING-PLATFORM / CONTRACTS</text><text class="big" x="605" y="526">One schema, every boundary</text><text class="cap" x="908" y="505">SHEET</text><text class="big" x="908" y="526">6/10</text>
+</svg>
