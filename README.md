@@ -206,7 +206,7 @@ kubernetes-learning/                          # local workspace
 │       └── state/                            # topology / view / scenario / session state
 └── platform/
     ├── .github/workflows/                    # reusable: dotnet-ci, node-ci, proto-ci, container-publish, release-binary, vm-image, pr-title, copilot-review
-    ├── lint/                                 # canonical .editorconfig, analyzers, eslint, prettier
+    ├── lint/                                 # canonical .editorconfig, analyzers, biome.json
     ├── infra/                                # OpenTofu: hetzner/ (server, firewall), proxmox/ (bridge, pool, token)
     ├── deploy/                               # hetzner/ (compose with RabbitMQ, Caddyfile), proxmox/ (envmgr unit, nftables), wireguard/
     └── dev/                                  # local dev compose (Postgres + api with a fake sandbox)

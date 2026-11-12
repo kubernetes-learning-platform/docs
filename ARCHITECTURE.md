@@ -517,7 +517,7 @@ platform/
 │   ├── pr-title.yml           # Conventional Commit PR titles; also runs on platform's own PRs
 │   ├── copilot-review.yml     # one Copilot review per PR; also runs on platform's own PRs
 │   ├── dotnet-ci.yml          # format check, build, test
-│   ├── node-ci.yml            # eslint, prettier, typecheck, test, build
+│   ├── node-ci.yml            # biome ci, typecheck, test, build
 │   ├── proto-ci.yml           # buf lint/breaking, generate, pack, publish
 │   ├── container-publish.yml  # buildx → GHCR, multi-arch (sha + semver tags)
 │   ├── release-binary.yml     # dotnet publish linux-x64 + linux-arm64 → GitHub Release
@@ -525,8 +525,7 @@ platform/
 ├── lint/
 │   ├── .editorconfig
 │   ├── Directory.Build.props  # analyzers, warnings-as-errors, LangVersion
-│   ├── eslint.config.mjs
-│   ├── prettier.config.mjs
+│   ├── biome.json             # TypeScript lint + format rules
 │   └── sync.sh                # copy canonical configs into a repo
 ├── infra/                     # OpenTofu (CALL); state is never committed
 │   ├── hetzner/               # server + cloud firewall (hcloud provider)
@@ -557,7 +556,7 @@ platform/
 </picture>
 
 - **Reusable workflows** live in `platform/.github/workflows`. Each repo's `ci.yml` is a short `uses: kubernetes-learning-platform/platform/.github/workflows/dotnet-ci.yml@main`. If `platform` is private, set it to "accessible from repositories in the organization" under Actions settings.
-- **Lint** (CALL): C# uses `.editorconfig` + `dotnet format --verify-no-changes` + `TreatWarningsAsErrors` + `AnalysisLevel=latest-recommended`. TS uses ESLint flat config + Prettier + `tsc --noEmit`. Proto uses `buf lint`. Canonical copies live in `platform/lint/`, and the reusable CI fails if a repo's copy drifts.
+- **Lint** (CALL): C# uses `.editorconfig` + `dotnet format --verify-no-changes` + `TreatWarningsAsErrors` + `AnalysisLevel=latest-recommended`. TS uses **Biome** for linting and formatting, checked in CI with `biome ci`, plus `tsc --noEmit`. Biome replaces ESLint (DECIDED by Filip) and Prettier (CALL, since Biome formats too). Proto uses `buf lint`. Canonical copies live in `platform/lint/`, and the reusable CI fails if a repo's copy drifts.
 - **Architectures** (CALL): envmgr and harness publish for **linux-x64 and linux-arm64 from M1**, and scenario images and the DinD sandbox image are multi-arch. The Docker provider on Apple Silicon runs linux/arm64 containers. The `api` and `web` images are multi-arch too, so the Hetzner box can be x64 or ARM. The VM template stays x64-only, for the Proxmox box.
 - **Releases:** tags trigger releases. `api`/`web` → GHCR images. `sandbox` → envmgr + harness binaries, SandboxClient NuGet, then `vm-image.yml` builds a new Proxmox VM template with the matching harness baked in. Nothing pulls from the internet at runtime (DECIDED).
 - **Self-hosted runner** (CALL): GitHub-hosted runners can't reach Proxmox, so `vm-image.yml` runs on a self-hosted runner in an LXC on the Proxmox box. Every other workflow stays on GitHub-hosted runners.
