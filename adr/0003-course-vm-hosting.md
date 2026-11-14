@@ -86,7 +86,7 @@ This gets settled in a revision of this ADR.
 
 - `api` and `web` images are built on every merge to `main` and pushed to GHCR, tagged with the commit SHA (platform#19).
 - A **private deploy repo** has a manual `workflow_dispatch` workflow that takes the image SHAs to deploy (platform#15). It updates the stack, smoke-tests `/healthz`, and restores the previous version if the test fails. Only Filip can start it.
-- It runs on a **self-hosted runner on the VM** (platform#14), as its own user, with its own label, registered only to private repos. The same runner builds the sandbox template, which needs KVM.
+- It runs on a **self-hosted runner on the VM** (platform#14), as its own user, with its own label, registered only to private repos. The same runner builds the sandbox template, which needs KVM. The code repos are public and can't use this runner, so the deploy repo starts that build too.
 - Each deploy records a deployment and its status on `api` and `web` through a GitHub App, so both repos show the commit running in `production` (platform#16).
 - Everything else in CI stays on GitHub-hosted runners.
 

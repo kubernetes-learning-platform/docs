@@ -49,7 +49,7 @@
 
 People help across lines when needed (DECIDED). Filip has the most surface area, but most of it (contracts, CI, sandbox) has to exist first anyway, before `api` and `web` can go far.
 
-Ownership is enforced by repo boundaries, plus a `CODEOWNERS` file in `api` that assigns `src/KubernetesLearning.Agent/`, `src/KubernetesLearning.Scenarios/` and `scenarios/` to Filip.
+Ownership is enforced by repo boundaries. Every repo's `.github/CODEOWNERS` requests Filip's review on every PR; merging needs one approval from anyone else with write access (§8).
 
 ---
 
@@ -493,7 +493,7 @@ api/
 │   └── broken-ingress/                            # scenario.yaml, manifests/ (format: ADR 0002 §4)
 ├── tests/{Api.Tests,Scenarios.Tests,Agent.Tests}/
 ├── Dockerfile
-├── .github/CODEOWNERS                             # Agent/ + Scenarios/ + scenarios/ → Filip
+├── .github/CODEOWNERS                             # * → Filip, review requested on every PR
 └── .github/workflows/ci.yml
 ```
 
@@ -526,13 +526,14 @@ platform/
 ├── .github/workflows/                             # all `on: workflow_call`
 │   ├── pr-title.yml           # Conventional Commit PR titles; also runs on platform's own PRs
 │   ├── copilot-review.yml     # one Copilot review per PR; also runs on platform's own PRs
+│   ├── pr-assign.yml          # assigns each PR to its author; also runs on platform's own PRs
 │   ├── dotnet-ci.yml          # format check, build, test
 │   ├── node-ci.yml            # biome ci, typecheck, test, build
 │   ├── proto-ci.yml           # buf lint/breaking, generate, pack, publish
 │   ├── contracts-bump.yml     # sets a new contracts version, builds, tests, pushes to main or opens a PR
 │   ├── container-publish.yml  # buildx → GHCR, multi-arch (sha + semver tags)
 │   ├── release-binary.yml     # dotnet publish linux-x64 + linux-arm64 → GitHub Release
-│   └── sandbox-template.yml   # Packer → qcow2 sandbox template; runs on the self-hosted runner on the VM
+│   └── sandbox-template.yml   # Packer → qcow2 sandbox template; self-hosted runner, started from the deploy repo
 ├── lint/
 │   ├── .editorconfig
 │   ├── Directory.Build.props  # analyzers, warnings-as-errors, LangVersion
@@ -559,16 +560,17 @@ platform/
   <img src="assets/diagrams/platform-light.svg" width="100%" alt="Which reusable workflow ships what, and which machine it ends up on.">
 </picture>
 
-- **Reusable workflows** live in `platform/.github/workflows`. Each repo's `ci.yml` is a short `uses: kubernetes-learning-platform/platform/.github/workflows/dotnet-ci.yml@main`. If `platform` is private, set it to "accessible from repositories in the organization" under Actions settings.
+- **Reusable workflows** live in `platform/.github/workflows`. Each repo's `ci.yml` is a short `uses: kubernetes-learning-platform/platform/.github/workflows/dotnet-ci.yml@main`. `platform` is public, so every repo can call them.
 - **Lint** (CALL): C# uses `.editorconfig` + `dotnet format --verify-no-changes` + `TreatWarningsAsErrors` + `AnalysisLevel=latest-recommended`. TS uses **Biome** for linting and formatting, checked in CI with `biome ci`, plus `tsc --noEmit`. Biome replaces ESLint (DECIDED by Filip) and Prettier (CALL, since Biome formats too). Proto uses `buf lint`. Canonical copies live in `platform/lint/`, and the reusable CI fails if a repo's copy drifts.
 - **Architectures** (CALL): envmgr and harness publish for **linux-x64 and linux-arm64 from M1**, and scenario images and the DinD sandbox image are multi-arch. The Docker provider on Apple Silicon runs linux/arm64 containers. The `api` and `web` images are multi-arch too. The qcow2 sandbox template stays x64-only, for the course VM.
 - **Releases:** every merge to `main` in `api` or `web` publishes an image to GHCR, tagged with the commit SHA (platform#19). A tag in `sandbox` publishes the envmgr + harness binaries and the SandboxClient NuGet, then `sandbox-template.yml` builds a new sandbox template with the matching harness baked in. `contracts` publishes on every schema merge (§5). Nothing pulls from the internet at runtime (DECIDED).
-- **Self-hosted runner** (DECIDED, platform#14): one runner on the course VM, as its own user, with its own label, registered only to private repos. Only the deploy workflow and `sandbox-template.yml`, which needs KVM, use it. Every other workflow stays on GitHub-hosted runners.
+- **Self-hosted runner** (DECIDED, platform#14): one runner on the course VM, as its own user, with its own label, registered only to private repos. Only the deploy workflow and `sandbox-template.yml`, which needs KVM, use it, and both start from the private deploy repo because the code repos are public. Every other workflow stays on GitHub-hosted runners.
 - **No infrastructure code** (CALL, [ADR 0003](adr/0003-course-vm-hosting.md)): the course VM isn't ours to create, so `platform/deploy/vm/install.sh` sets up the base system, Tailscale and libvirt (platform#8 to #10). Packer in `sandbox/images/base/` builds the sandbox template. **Sandboxes themselves are not IaC:** envmgr's reconcile loop owns them, because per-session state files and a plan/apply cycle on every create would be slow and go stale whenever a VM is deleted outside the tool.
 - **Deploy** (DECIDED, [ADR 0003 §6](adr/0003-course-vm-hosting.md#6-deploys-decided)): a manual `workflow_dispatch` in a private deploy repo takes the image SHAs to deploy, updates the stack on the VM, smoke-tests `/healthz`, and restores the previous version if the test fails (platform#15). Only Filip can start it. Each deploy records a deployment and its status on `api` and `web` through a GitHub App, so both repos show the commit running in `production` (platform#16). The deploy format, Compose or a Helm chart on k3s, is OPEN. `envmgr` runs as a systemd unit either way.
 - **Observability while testing** (CALL, platform#18): Prometheus, Grafana, Loki and a log collector on the VM, with no published port. Grafana is served through Caddy. Harness logs reach Loki through `envmgr`.
-- **Contracts bumps** (DECIDED 2026-11-14): when `contracts` publishes, it notifies `sandbox`, `api` and `web` through a GitHub App token stored only in `contracts`. Each runs `contracts-bump.yml` from `platform`: set the new version, build, test, and push `build(deps): bump contracts to X.Y.Z` to `main` with its own `GITHUB_TOKEN`. If the build fails, it opens a PR for that repo's owner instead. The org is on the Free plan with private repos, so there is no auto-merge to rely on. `SandboxClient` updates in `api` stay manual for now (CALL).
-- **Branching** (CALL): trunk-based, short-lived branches, squash merge, Conventional Commit PR titles.
+- **Contracts bumps** (DECIDED 2026-11-14): when `contracts` publishes, it notifies `sandbox`, `api` and `web` through a GitHub App token. Each runs `contracts-bump.yml` from `platform`: set the new version, build, test, and push `build(deps): bump contracts to X.Y.Z` to `main` with the same App's token. The App is on each repo's `main` ruleset bypass list, so the bump needs no PR, and its key is an organization secret. If the build fails, it opens a PR for that repo's owner instead. `SandboxClient` updates in `api` stay manual for now (CALL).
+- **Public repos** (DECIDED 2026-11-14, platform#27): all six repos are public; only the deploy repo and `.github-private` stay private. Every repo has secret scanning with push protection, Dependabot alerts and security updates, private vulnerability reporting and CodeQL default setup.
+- **Branching** (CALL): trunk-based, short-lived branches named in each issue's `Branch:` line, squash merge, Conventional Commit PR titles. A ruleset on `main` in every repo blocks force-pushes and deletion and requires a PR, a passing `pr-title` check and one approval from someone other than the author. `CODEOWNERS` requests Filip's review on every PR, `pr-assign.yml` assigns the author, and repo admins can bypass the ruleset.
 - **Config** is env vars only (DECIDED). For example, api uses `ConnectionStrings__Db`, `RabbitMq__Url`, `Llm__Provider`, `Llm__ApiKey`, `Session__IdleMinutes`, `Agent__TokenBudget`, `Agent__MaxConcurrentTurns`, `Sandbox__Mode=Real|Fake`. envmgr uses `Provider=Qemu|Docker`, `Grpc__Listen`, `Harness__Listen`, `RabbitMq__Url`, `Libvirt__Uri`, `Qemu__TemplateImage`, `Qemu__StoragePool`, `Sandbox__Subnet`, `Sandbox__MaxConcurrent`, `WarmPool__Size`, `StateDir`, `Sandbox__MaxLifetime`. The harness uses `Harness__Url`, `Harness__SandboxId`, `Harness__Token`.
 
 ### Local development without KVM
@@ -607,7 +609,7 @@ The core works and can be demonstrated before any LLM work, because the product 
 6. **Nested virtualization is unknown.** Without `/dev/kvm` on the course VM, sandboxes become Sysbox containers that share the kernel with the stack (ADR 0003 §3). Nested VMs, if available, boot slower than on bare metal. Check it early (platform#6).
 7. **Tailscale start order.** Caddy listens only on the VM's Tailscale address, so whatever runs it must start after Tailscale, or the port binding fails at boot.
 8. **GitHub Packages needs a token to install, even for public packages.** Each person creates a classic PAT with `read:packages` once, for `nuget.config` and `.npmrc`. CI uses `GITHUB_TOKEN`, but each consuming repo must be granted access to the package.
-9. **Required reviews and branch protection on private repos need a paid plan** (or GitHub Education's Team plan). On a free org with private repos, CODEOWNERS only requests reviews and can't enforce them.
+9. **The repos are public.** Everything committed is public at once. Push protection blocks known token formats, but real `.env` files, keys and personal data must never be committed. Commits use Filip's noreply address and are signed.
 10. **Docker provider memory.** 3–4 GB per sandbox inside Docker Desktop's VM. Raise its memory limit.
 11. **RabbitMQ is one more service, and it can be down.** A message published while disconnected is lost, so `api` uses publisher confirms and returns "try again" when the broker can't be reached. Consumers must handle redeliveries. It also shares the VM with the stack and the sandboxes, so measure its memory.
 12. **Checks run real commands in every sandbox.** They run every few seconds, so each one must stay cheap.
@@ -623,13 +625,14 @@ Resolved by [ADR 0003](adr/0003-course-vm-hosting.md): hosting (one course-provi
 
 Resolved by [ADR 0002](adr/0002-learner-driven-scenarios-and-scale-target.md): the final demo date (by June 2027).
 
+Resolved on 2026-11-14 (platform#27): repo visibility. The six repos are public (§8).
+
 New:
 - **The scenario list,** and whether Helm is included.
 - **Nested virtualization** on the course VM, which decides the sandbox type (platform#6).
 - **Deploy format:** Docker Compose or a Helm chart on single-node k3s ([ADR 0003 §5](adr/0003-course-vm-hosting.md#5-deploy-format-open)).
 - **Real RAM per sandbox,** which sets `Sandbox__MaxConcurrent` and `WarmPool__Size` for the demo, and how many graders can try at once (platform#17).
 - **Event log retention:** how long to keep `session_events` for finished sessions.
-- **Repo visibility:** public or private? Affects branch protection (risk 9) and whether the VM needs a GHCR login to pull images (platform#27).
 - **Course requirements & capacity:** any course checkpoints, rough hours per person per week, and anything the course requires (evidence of individual contribution, where code must be hosted). This decides which M5 items and stretch goals make the cut.
 - **Final project name:** see below.
 

@@ -240,6 +240,7 @@ KVM is not required for day-to-day development. `envmgr` has a **Docker provider
 
 - **Commits:** strict [Conventional Commits](https://www.conventionalcommits.org/), one line, e.g. `feat: add warm pool`. No body, no co-author trailers.
 - **PRs:** the title uses the same format. Every repo only allows squash merges, and the squash commit is the PR title, so `main` gets one clean line per change. A check fails any PR whose title doesn't follow the format.
+- **Reviews:** every repo is public, and `main` is protected: PRs only, squash merges, a passing title check and one approval from someone other than the author. Filip is requested as reviewer on every PR, and the author is assigned automatically.
 - **Copilot:** every PR gets one Copilot review when it opens, except Markdown-only PRs and PRs labelled `skip-copilot`. It needs Copilot on your account, which is free through GitHub Student.
 - **Branches:** each issue names its branch in a `Branch:` line, e.g. `feat/warm-pool`. Create it with `gh issue develop <number> --name <branch>`, or with the issue's **Create a branch** button renamed to match. Branches are deleted after merging.
 - **Where changes land:** while the repos are still empty, documentation is committed straight to `main`. From the setup issues on, every change goes through a PR.
