@@ -244,6 +244,8 @@ KVM is not required for day-to-day development. `envmgr` has a **Docker provider
 - **Branches:** each issue names its branch in a `Branch:` line, e.g. `feat/warm-pool`. Create it with `gh issue develop <number> --name <branch>`, or with the issue's **Create a branch** button renamed to match. Branches are deleted after merging.
 - **Where changes land:** while the repos are still empty, documentation is committed straight to `main`. From the setup issues on, every change goes through a PR.
 
+- **AI agents:** every repo has an `AGENTS.md` that explains the repo and these rules, and a `CLAUDE.md` symlinked to it. Agents ask before creating a branch or committing.
+
 More in [platform → Conventions](https://github.com/kubernetes-learning-platform/platform#conventions).
 
 ---
