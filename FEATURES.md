@@ -2,7 +2,7 @@
 
 Every feature of the platform: first **what the user sees**, then **how it works** under the hood. For the component-level design, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
-**In one sentence:** a web app that gives you, in one click, your own disposable VM running a real 3-node Kubernetes cluster and a real terminal. Every change in that cluster streams live into a graph on screen, and an optional AI helper can explain and demonstrate when you ask.
+**In one sentence:** a web app that gives you, in one click, your own disposable sandbox running a real 3-node Kubernetes cluster and a real terminal. Every change in that cluster streams live into a graph on screen, and an optional AI helper can explain and demonstrate when you ask.
 
 ---
 
@@ -10,11 +10,11 @@ Every feature of the platform: first **what the user sees**, then **how it works
 **What you see:** click "Start", and seconds later you have a working Kubernetes cluster with nodes `cp`, `w1`, `w2`. You start with a scenario or a blank cluster, and you have full `kubectl` freedom either way.
 
 **How it works:**
-- Sandboxes run on a **Proxmox** box at home. **envmgr**, a daemon on that box, keeps 1–2 **VMs** pre-booted (the "warm pool"). Each VM is a linked clone of one VM template, so making a new one takes seconds.
-- Inside each VM, **k3d** runs **k3s** (lightweight Kubernetes). Each "node" is a Docker container, so the cluster comes up in seconds instead of minutes.
-- Every image the cluster needs is baked into the VM template. Nothing is downloaded when a session starts.
-- Proxmox runs the VMs, not envmgr, so restarting envmgr doesn't kill running sessions.
-- The VM is destroyed when the session ends or after ~30 minutes idle.
+- Sandboxes run on one **course-provided VM**. **envmgr**, a daemon on that VM, keeps 1–2 **sandboxes** pre-booted (the "warm pool"). Each sandbox is a small VM of its own, a linked clone of one template, so making a new one takes seconds. If the course VM can't run nested VMs, sandboxes are containers instead.
+- Inside each sandbox, **k3d** runs **k3s** (lightweight Kubernetes). Each "node" is a Docker container, so the cluster comes up in seconds instead of minutes.
+- Every image the cluster needs is baked into the sandbox template. Nothing is downloaded when a session starts.
+- libvirt runs the sandboxes, not envmgr, so restarting envmgr doesn't kill running sessions.
+- The sandbox is destroyed when the session ends or after ~30 minutes idle.
 
 ## 2. Waiting in line when it's full
 **What you see:** if every sandbox is in use, the app shows "queued, #3" instead of an error, and your lab opens when your turn comes.
@@ -22,7 +22,7 @@ Every feature of the platform: first **what the user sees**, then **how it works
 **How it works:**
 - `api` publishes a start request to **RabbitMQ**, and envmgr takes one only when it has room. A hard cap, `Sandbox__MaxConcurrent`, is set from the host's RAM.
 - Failed starts are retried. After too many failures, the session is marked failed and you're told.
-- Teardown requests use the same queue, so they survive a link drop.
+- Teardown requests use the same queue, so they survive an envmgr restart.
 - Requests are Protobuf messages, checked by buf like every other contract. `api` works out your position in line from its own records.
 - Only start and teardown use the queue. Everything live streams directly.
 
@@ -35,7 +35,7 @@ Every feature of the platform: first **what the user sees**, then **how it works
 - A turn only ever starts from your message or answer, so the helper can't act on its own.
 - Text streams to the browser token by token (`ChatDelta`) over a WebSocket.
 - A per-session **token budget** caps LLM cost, and a global limit caps how many turns run at once. When the budget runs out, the helper turns off and says so, and your scenario carries on.
-- The LLM API key lives only in api and never enters the VM.
+- The LLM API key lives only in api and never enters the sandbox.
 
 ## 4. "Show me, then ask me"
 **What you see:** you ask, "Can you demonstrate the first part and explain it?" The helper does it, with every command visible and notes on the canvas. Then it stops and asks something like:
@@ -56,10 +56,10 @@ Nothing happens until you answer.
 **What you see:** a graph of nodes, pods, deployments, services and ingresses that updates itself live as pods start, crash or move, whether you or the helper made the change.
 
 **How it works:**
-- The **harness**, a small program inside the VM, **watches** the Kubernetes API (nodes, pods, deployments, replicasets, services, endpoints, ingresses, events) and Docker events. More kinds get added as scenarios need them.
+- The **harness**, a small program inside the sandbox, **watches** the Kubernetes API (nodes, pods, deployments, replicasets, services, endpoints, ingresses, events) and Docker events. More kinds get added as scenarios need them.
 - It keeps a normalized **graph model** of entities and edges ("owns", "runs on", "routes to"). It sends a full **snapshot** first, then only **diffs**, each with a revision number.
-- Path: harness → **WebSocket** on an isolated network bridge → envmgr (on the Proxmox box) → gRPC stream over the **WireGuard mesh** → api (on the Hetzner box) → WebSocket → browser.
-- If the home connection blips, the lab shows "reconnecting", and the graph reloads from a fresh snapshot once the link is back.
+- Path: harness → **WebSocket** on an isolated sandbox network → envmgr → gRPC stream → api, all on the course VM → WebSocket over **Tailscale** → browser.
+- If envmgr restarts, the lab shows "reconnecting", and the graph reloads from a fresh snapshot once the link is back.
 - **React Flow** draws it, and **elkjs** computes the layout.
 - **Key principle:** the graph is drawn *only* from real cluster state, with the helper on or off, never from what the helper *says*. If it claims "it worked" while a pod is crashing, the screen shows the crash.
 
@@ -75,7 +75,7 @@ Nothing happens until you answer.
 **What you see:** a real terminal into the cluster that's yours from the start. It's read-only only while the helper is acting, and you watch its commands scroll by as `agent$ kubectl …`.
 
 **How it works:**
-- **xterm.js** in the browser connects to a real bash in the VM through a **PTY** (pseudo-terminal) created by the harness.
+- **xterm.js** in the browser connects to a real bash in the sandbox through a **PTY** (pseudo-terminal) created by the harness.
 - Keystrokes go up as `TerminalInput`, and output comes back as `TerminalOutput`, over the same pipe as everything else.
 - The helper's commands run on a separate **exec channel**, so the LLM gets clean output and exit codes. They're mirrored into your terminal so you see everything.
 
@@ -102,11 +102,11 @@ Nothing happens until you answer.
 - ⚠️ **Demo gotcha:** by default Kubernetes waits ~5 minutes before moving pods off a dead node. The cluster config should shorten these timeouts so rescheduling is visible in seconds.
 
 ## 10. Scenarios
-**What you see:** a list of 3–5 scenarios from simple to complex, such as "Fix a broken ingress", covering services, ingress, YAML and `kubectl`. Each one runs in steps with a goal, hints you can open, checks that turn green and a **Next** button. **Reset** takes you back to the start of the step, and **Start over** gives you a fresh VM.
+**What you see:** a list of 3–5 scenarios from simple to complex, such as "Fix a broken ingress", covering services, ingress, YAML and `kubectl`. Each one runs in steps with a goal, hints you can open, checks that turn green and a **Next** button. **Reset** takes you back to the start of the step, and **Start over** gives you a fresh sandbox.
 
 **How it works:**
-- A scenario is **one folder**: a `scenario.yaml` with its steps, plus manifests. All scenarios share one VM template, and `api` sends the files to the sandbox when it starts. Only a brand-new container image needs a template rebuild, so adding a scenario is usually just a folder and a PR. The format is in [ADR 0002](adr/0002-learner-driven-scenarios-and-scale-target.md).
-- **Checks** run inside the VM through the harness, and test real behaviour with no LLM: a `resource` exists or has a value, an `http` request returns a status, or a `command` exits cleanly.
+- A scenario is **one folder**: a `scenario.yaml` with its steps, plus manifests. All scenarios share one sandbox template, and `api` sends the files to the sandbox when it starts. Only a brand-new container image needs a template rebuild, so adding a scenario is usually just a folder and a PR. The format is in [ADR 0002](adr/0002-learner-driven-scenarios-and-scale-target.md).
+- **Checks** run inside the sandbox through the harness, and test real behaviour with no LLM: a `resource` exists or has a value, an `http` request returns a status, or a `command` exits cleanly.
 - A passed step shows **Next**, and nothing changes in the cluster until you click it.
 - **Reset** reverts the step's faults, deletes the scenario's namespaces and re-applies the step's starting state.
 - A step can include a **solution**, so CI can prove it's solvable, and notes telling the helper how to demonstrate it.
@@ -128,38 +128,38 @@ Nothing happens until you answer.
 - Every message the server sends gets a **sequence number**. It's written to Postgres in an **append-only event log** *before* it's sent to the browser. Terminal output is batched first, so typing doesn't mean one database row per chunk.
 - Replay reads those same messages back and feeds them into the same frontend code. To the UI, replay is just a different source.
 - The same log handles reconnects: a dropped browser sends `Resync{afterSeq}` and catches up.
-- The log lives on the Hetzner box, so replay works even when the Proxmox box at home is unreachable.
+- The log lives in Postgres, so replay works even when no sandbox can start.
 
 ## 13. Accounts, sessions & progress
 **What you see:** a login, a home screen showing what you've finished and what's next, and one active lab per person that cleans itself up when you walk away.
 
 **How it works:**
-- Auth sits behind an `IAuthProvider` interface. The mechanism is still OPEN, and a light one is enough: the app is only reachable over the WireGuard mesh.
+- Auth sits behind an `IAuthProvider` interface. The mechanism is still OPEN, and a light one is enough: the app is only reachable over Tailscale.
 - `scenario_progress` stores each account's status per scenario step. A step the helper demonstrated still counts, and a flag records that it did.
 - An idle reaper in api ends sessions after ~30 minutes, and envmgr has its own hard time limit as a backstop.
 
 ## 14. Isolation (invisible, but the reason the design looks like this)
-- **One VM per session:** a scenario that kills nodes or fills a disk can't touch the host or other sessions.
-- **One way out of a sandbox.** The VM sits on an isolated bridge, and envmgr's harness endpoint is the only address it can reach: no internet, no home network, no mesh, no other sandboxes, no broker.
-- **No secrets in the VM.** Keys stay in api. The VM only gets its own one-time token.
+- **One sandbox per session:** a scenario that kills nodes or fills a disk can't touch the host or other sessions.
+- **One way out of a sandbox.** The sandbox sits on an isolated network, and envmgr's harness endpoint is the only address it can reach: no internet, no tailnet, no stack, no other sandboxes, no broker.
+- **No secrets in the sandbox.** Keys stay in api. The sandbox only gets its own one-time token.
 - **MVP sandboxes are fully offline.**
-- **Nothing is public.** The whole app is only reachable over the WireGuard mesh.
+- **Nothing is public.** The whole app is only reachable over Tailscale.
 
 ## 15. Where it runs (invisible)
-- **Hetzner box:** a small cloud server running `web`, `api`, Postgres, RabbitMQ and Caddy in Docker Compose.
-- **Proxmox box:** a PC at home running Proxmox VE, envmgr and the sandbox VMs.
-- **Demo laptop:** the browser on the projector.
-- All three are joined by a **WireGuard mesh**. The Hetzner box is the only one with a public address; the other two connect out to it, so no port forwarding is needed. See [ADR 0001](adr/0001-hosting-and-harness-transport.md).
+- **One course-provided VM** (16 vCPU, 32 GB) runs `web`, `api`, Postgres, RabbitMQ and Caddy, plus envmgr and the sandboxes. How the stack is deployed is still open.
+- **Tailscale** connects it to the demo laptop and the team's devices. No port is open to the internet.
+- Caddy serves the app on our own domain with a real certificate, obtained through the DNS-01 challenge.
+- See [ADR 0003](adr/0003-course-vm-hosting.md).
 
 ## 16. Built for 30 at once (invisible)
 - The design target is **30 concurrent sandboxes**, though only what the demo needs gets provisioned. See [ADR 0002](adr/0002-learner-driven-scenarios-and-scale-target.md).
 - The stack and the sandbox host are separate roles connected by addresses, so a second sandbox host would simply be a second consumer of the queue.
-- RAM is the real limit, so real sandbox usage gets measured in M1. A load test in M5 runs 30 scripted sessions against the fake sandbox, plus as many real ones as the home PC holds.
+- RAM is the real limit, so real sandbox usage gets measured on the VM. A load test in M5 runs 30 scripted sessions against the fake sandbox, plus as many real ones as the course VM holds.
 
 ---
 
 ## Not in the MVP (stretch goals)
-- **Bring your own repo:** clone a public repo, build it inside the VM and deploy it. Needs internet egress from the VM and more RAM.
+- **Bring your own repo:** clone a public repo, build it inside the sandbox and deploy it. Needs internet egress from the sandbox and more RAM.
 - Adding and removing nodes (`add_node` / `remove_node`).
 - Spectator mode, so others can watch a session live.
 - Real VMs as cluster nodes, KubeVirt provider.

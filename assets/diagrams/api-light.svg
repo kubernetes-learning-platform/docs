@@ -78,7 +78,7 @@
 <rect class="box part" x="580" y="80" width="130" height="80" rx="3"/><text class="t" x="645.0" y="111.0">Agent</text><text class="s" x="645.0" y="125.0">helper loop</text><text class="s" x="645.0" y="138.0">typed tools</text>
 <rect class="box part" x="580" y="210" width="130" height="80" rx="3"/><text class="t" x="645.0" y="247.5">SandboxClient</text><text class="s" x="645.0" y="261.5">ISandboxSession</text>
 <rect class="box ext" x="810" y="90" width="130" height="60" rx="3"/><text class="t" x="875.0" y="124.0">LLM API</text>
-<rect class="box ext" x="810" y="210" width="130" height="80" rx="3"/><text class="t" x="875.0" y="247.5">envmgr</text><text class="s" x="875.0" y="261.5">Proxmox box</text>
+<rect class="box ext" x="810" y="210" width="130" height="80" rx="3"/><text class="t" x="875.0" y="247.5">envmgr</text><text class="s" x="875.0" y="261.5">on the host</text>
 <rect class="box ext" x="810" y="350" width="130" height="70" rx="3"/><text class="t" x="875.0" y="389.0">RabbitMQ</text>
 <rect class="mask" x="162.2" y="111.0" width="35.6" height="18" rx="2"/>
 <text class="l" x="180.0" y="123.6">REST</text>

@@ -2,7 +2,8 @@
 
 - **Status:** Accepted · 2026-11-04 · **DECIDED** by Filip
 - **Changes:** the agent-driven product shape, the control model and the lesson design in [ARCHITECTURE](../ARCHITECTURE.md) and [FEATURES](../FEATURES.md). It also overrides [PROJECT-BRIEF](../PROJECT-BRIEF.md) §11's rejection of a job queue, **for sandbox provisioning only**.
-- **Builds on:** [ADR 0001](0001-hosting-and-harness-transport.md). Hosting, the mesh and the isolated sandbox bridge don't change.
+- **Builds on:** [ADR 0001](0001-hosting-and-harness-transport.md). The isolated sandbox bridge doesn't change.
+- **Changed by:** [ADR 0003](0003-course-vm-hosting.md), 2026-11-14. The machine details below (the Hetzner box, the home PC, the mesh, RabbitMQ on `10.66.0.1`) are replaced by one course-provided VM reached over Tailscale. The demo runs on the VM, shown from Filip's laptop. Everything else here holds.
 
 Labels: **DECIDED** by Filip · **CALL** chosen while writing this, change freely · **OPEN** not decided.
 

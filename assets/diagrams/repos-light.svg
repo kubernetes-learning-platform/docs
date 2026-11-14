@@ -60,7 +60,7 @@
 <rect class="box own" x="300" y="180" width="150" height="90" rx="3"/><path class="bar" d="M303 180 h144 a3 3 0 0 1 3 3 v19 h-150 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="375.0" y="195.5">sandbox</text><text class="s" x="375.0" y="232.5">envmgr · harness</text><text class="s" x="375.0" y="245.5">SandboxClient</text>
 <rect class="box own" x="560" y="180" width="150" height="90" rx="3"/><path class="bar" d="M563 180 h144 a3 3 0 0 1 3 3 v19 h-150 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="635.0" y="195.5">api</text><text class="s" x="635.0" y="232.5">backend</text><text class="s" x="635.0" y="245.5">scenarios + helper</text>
 <rect class="box own" x="810" y="180" width="150" height="90" rx="3"/><path class="bar" d="M813 180 h144 a3 3 0 0 1 3 3 v19 h-150 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="885.0" y="195.5">web</text><text class="s" x="885.0" y="232.5">Next.js</text><text class="s" x="885.0" y="245.5">frontend</text>
-<rect class="box ext" x="40" y="370" width="920" height="70" rx="3"/><text class="t" x="500.0" y="402.5">platform</text><text class="s" x="500.0" y="416.5">reusable CI workflows · lint configs · infrastructure code · deploy files</text>
+<rect class="box ext" x="40" y="370" width="920" height="70" rx="3"/><text class="t" x="500.0" y="402.5">platform</text><text class="s" x="500.0" y="416.5">reusable CI workflows · lint configs · VM install script · deploy files</text>
 <rect class="mask" x="224.0" y="211.0" width="42.0" height="18" rx="2"/>
 <text class="l" x="245.0" y="223.6">NuGet</text>
 <rect class="mask" x="458.4" y="211.0" width="93.3" height="18" rx="2"/>

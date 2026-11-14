@@ -41,7 +41,7 @@
 <rect fill="url(#dots)" x="10" y="10" width="980" height="540" rx="10"/>
 <rect class="inner" x="9.5" y="9.5" width="981" height="541" rx="10"/>
 <rect class="group" x="30" y="50" width="160" height="410" rx="8"/><rect class="mask" x="42" y="43" width="61" height="14"/><text class="cap" x="49" y="53.5">BROWSER</text>
-<rect class="group" x="630" y="50" width="340" height="410" rx="8"/><rect class="mask" x="642" y="43" width="82" height="14"/><text class="cap" x="649" y="53.5">SANDBOX VM</text>
+<rect class="group" x="630" y="50" width="340" height="410" rx="8"/><rect class="mask" x="642" y="43" width="61" height="14"/><text class="cap" x="649" y="53.5">SANDBOX</text>
 <polyline class="wire" points="170,120 270,120" marker-end="url(#arrow)"/>
 <polyline class="wire" points="400,120 470,120" marker-end="url(#arrow)"/>
 <polyline class="wire" points="580,120 660,120" marker-end="url(#arrow)"/>

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" class="sheet" role="img" aria-labelledby="st sd">
 <title id="st">Starting a session</title>
-<desc id="sd">Starting a session. Connections: Browser to api (Start); api to RabbitMQ (request); RabbitMQ to envmgr (when there is room); envmgr to Sandbox VM (warm VM or clone); envmgr to RabbitMQ (result); RabbitMQ to api; api to envmgr (Connect); Sandbox VM to envmgr (first snapshot); envmgr to api (snapshot); api to Browser (live).</desc>
+<desc id="sd">Starting a session. Connections: Browser to api (Start); api to RabbitMQ (request); RabbitMQ to envmgr (when there is room); envmgr to Sandbox (warm one or clone); envmgr to RabbitMQ (result); RabbitMQ to api; api to envmgr (Connect); Sandbox to envmgr (first snapshot); envmgr to api (snapshot); api to Browser (live).</desc>
 <style>
 .sheet{--paper:#16110A;--ink:#EDB95F;--soft:#B98C42;--fill:#211909;--grid:#4A3716;--pulse:#FFF3CF;}
 .sheet{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
@@ -40,8 +40,8 @@
 <rect class="paper" x="1.5" y="1.5" width="997" height="557" rx="16"/>
 <rect fill="url(#dots)" x="10" y="10" width="980" height="540" rx="10"/>
 <rect class="inner" x="9.5" y="9.5" width="981" height="541" rx="10"/>
-<rect class="group" x="210" y="50" width="200" height="410" rx="8"/><rect class="mask" x="222" y="43" width="89" height="14"/><text class="cap" x="229" y="53.5">HETZNER BOX</text>
-<rect class="group" x="470" y="50" width="500" height="410" rx="8"/><rect class="mask" x="482" y="43" width="89" height="14"/><text class="cap" x="489" y="53.5">PROXMOX BOX</text>
+<rect class="group" x="210" y="50" width="200" height="410" rx="8"/><rect class="mask" x="222" y="43" width="132" height="14"/><text class="cap" x="229" y="53.5">COURSE VM · STACK</text>
+<rect class="group" x="470" y="50" width="500" height="410" rx="8"/><rect class="mask" x="482" y="43" width="174" height="14"/><text class="cap" x="489" y="53.5">COURSE VM · ON THE HOST</text>
 <polyline class="wire" points="130,170 240,170" marker-end="url(#arrow)"/>
 <polyline class="wire dash" points="280,260 280,350" marker-end="url(#arrow)"/>
 <polyline class="wire dash" points="380,370 540,370 550,360 550,260" marker-end="url(#arrow)"/>
@@ -66,7 +66,7 @@
 <rect class="box own" x="240" y="140" width="140" height="120" rx="3"/><path class="bar" d="M243 140 h134 a3 3 0 0 1 3 3 v19 h-140 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="310.0" y="155.5">api</text><text class="s" x="310.0" y="207.5">creates the</text><text class="s" x="310.0" y="220.5">session</text>
 <rect class="box part" x="240" y="350" width="140" height="70" rx="3"/><text class="t" x="310.0" y="382.5">RabbitMQ</text><text class="s" x="310.0" y="396.5">work queue</text>
 <rect class="box own" x="510" y="140" width="140" height="120" rx="3"/><path class="bar" d="M513 140 h134 a3 3 0 0 1 3 3 v19 h-140 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="580.0" y="155.5">envmgr</text><text class="s" x="580.0" y="207.5">capacity cap</text><text class="s" x="580.0" y="220.5">warm pool</text>
-<rect class="box own" x="800" y="140" width="140" height="120" rx="3"/><path class="bar" d="M803 140 h134 a3 3 0 0 1 3 3 v19 h-140 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="870.0" y="155.5">Sandbox VM</text><text class="s" x="870.0" y="207.5">harness</text><text class="s" x="870.0" y="220.5">cp · w1 · w2</text>
+<rect class="box own" x="800" y="140" width="140" height="120" rx="3"/><path class="bar" d="M803 140 h134 a3 3 0 0 1 3 3 v19 h-140 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="870.0" y="155.5">Sandbox</text><text class="s" x="870.0" y="207.5">harness</text><text class="s" x="870.0" y="220.5">cp · w1 · w2</text>
 <rect class="mask" x="154.0" y="161.0" width="62.0" height="18" rx="2"/>
 <circle class="bar" cx="164.0" cy="170.0" r="8.5"/><text class="num" x="164.0" y="173.6">1</text>
 <text class="l" x="195.0" y="173.6">Start</text>
@@ -76,9 +76,9 @@
 <rect class="mask" x="387.4" y="361.0" width="145.3" height="18" rx="2"/>
 <circle class="bar" cx="397.4" cy="370.0" r="8.5"/><text class="num" x="397.4" y="373.6">3</text>
 <text class="l" x="470.0" y="373.6">when there is room</text>
-<rect class="mask" x="658.8" y="161.0" width="132.5" height="18" rx="2"/>
-<circle class="bar" cx="668.8" cy="170.0" r="8.5"/><text class="num" x="668.8" y="173.6">4</text>
-<text class="l" x="735.0" y="173.6">warm VM or clone</text>
+<rect class="mask" x="655.6" y="161.0" width="138.9" height="18" rx="2"/>
+<circle class="bar" cx="665.6" cy="170.0" r="8.5"/><text class="num" x="665.6" y="173.6">4</text>
+<text class="l" x="735.0" y="173.6">warm one or clone</text>
 <rect class="mask" x="455.8" y="391.0" width="68.4" height="18" rx="2"/>
 <circle class="bar" cx="465.8" cy="400.0" r="8.5"/><text class="num" x="465.8" y="403.6">5</text>
 <text class="l" x="500.0" y="403.6">result</text>
