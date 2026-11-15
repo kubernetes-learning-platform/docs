@@ -527,13 +527,14 @@ platform/
 │   ├── pr-title.yml           # Conventional Commit PR titles; also runs on platform's own PRs
 │   ├── copilot-review.yml     # one Copilot review per PR; also runs on platform's own PRs
 │   ├── pr-assign.yml          # assigns each PR to its author; also runs on platform's own PRs
-│   ├── dotnet-ci.yml          # format check, build, test
-│   ├── node-ci.yml            # biome ci, typecheck, test, build
-│   ├── proto-ci.yml           # buf lint/breaking, generate, pack, publish
+│   ├── dotnet-ci.yml          # lint copies, format check, build (no tests yet)
+│   ├── node-ci.yml            # lint copies, biome ci, build, typecheck (no tests yet)
+│   ├── proto-ci.yml           # lint copies, buf lint/format/breaking, generate, both packages; publish (contracts#2)
 │   ├── contracts-bump.yml     # sets a new contracts version, builds, tests, pushes to main or opens a PR
 │   ├── lint-sync.yml          # syncs the lint copies after a lint/ change, builds, tests, pushes to main or opens a PR
 │   ├── container-publish.yml  # buildx → GHCR, multi-arch (sha + semver tags)
 │   ├── release-binary.yml     # dotnet publish linux-x64 + linux-arm64 → GitHub Release
+│   ├── platform-check.yml     # platform's own PRs: actionlint, shellcheck, sync.sh --check
 │   └── sandbox-template.yml   # Packer → qcow2 sandbox template; self-hosted runner, started from the deploy repo
 ├── lint/
 │   ├── .editorconfig
