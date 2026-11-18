@@ -13,6 +13,7 @@ The documentation hub of kubernetes-learning-platform, a live Kubernetes lab wit
 | `FEATURES.md` | Every feature twice: what the user sees, then how it works |
 | `PROJECT-BRIEF.md` | The original brief. Kept for history, with notes where later decisions replace it |
 | `adr/` | Architecture decision records, one per decision |
+| `plans/` | Plans for upcoming work, such as the v0.1 schema. History once the work lands |
 | `assets/diagrams/` | `generate.py` and the SVG sheets it writes |
 
 - **Owner:** Filip. Everyone contributes.
@@ -28,6 +29,7 @@ docs/
 ├── FEATURES.md
 ├── PROJECT-BRIEF.md
 ├── adr/                    # 0001 harness transport, 0002 learner-driven scenarios, 0003 course VM hosting
+├── plans/                  # plans for upcoming work, e.g. schema-v0.1.md
 ├── assets/diagrams/        # generate.py + <sheet>-{light,dark}.svg
 └── .github/                # copilot-instructions.md, PR template, workflows
 ```

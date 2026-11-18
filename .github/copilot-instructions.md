@@ -1,6 +1,6 @@
 # Copilot instructions: docs
 
-This is the documentation hub of kubernetes-learning-platform, a live Kubernetes lab with an optional AI helper. `ARCHITECTURE.md` is the plan (repos, services, contracts, flows, milestones, risks). `FEATURES.md` explains each feature twice, once from the user's view and once technically. `adr/` holds the decision records. `PROJECT-BRIEF.md` is the original brief. Where they disagree, the ADRs and `ARCHITECTURE.md` win.
+This is the documentation hub of kubernetes-learning-platform, a live Kubernetes lab with an optional AI helper. `ARCHITECTURE.md` is the plan (repos, services, contracts, flows, milestones, risks). `FEATURES.md` explains each feature twice, once from the user's view and once technically. `adr/` holds the decision records, and `plans/` holds plans for upcoming work, such as the v0.1 schema. `PROJECT-BRIEF.md` is the original brief. Where they disagree, the ADRs and `ARCHITECTURE.md` win.
 
 ## When reviewing, focus on
 - **Decision labels.** Statements are tagged **DECIDED**, **DEFAULT**, **OPEN** or **CALL**. Keep the labels. Flag a change that quietly turns an OPEN item into a decision without saying so in the PR.
