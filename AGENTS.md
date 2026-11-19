@@ -28,7 +28,7 @@ docs/
 ├── ARCHITECTURE.md
 ├── FEATURES.md
 ├── PROJECT-BRIEF.md
-├── adr/                    # 0001 harness transport, 0002 learner-driven scenarios, 0003 course VM hosting
+├── adr/                    # 0001 harness transport, 0002 learner-driven scenarios, 0003 course VM hosting, 0004 node machines
 ├── plans/                  # plans for upcoming work, e.g. schema-v0.1.md
 ├── assets/diagrams/        # generate.py + <sheet>-{light,dark}.svg
 └── .github/                # copilot-instructions.md, PR template, workflows

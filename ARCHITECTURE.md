@@ -1,6 +1,6 @@
 # kubernetes-learning — Architecture & Repository Plan
 
-> Planning output, 2026-11-02, updated by three decision records. [ADR 0001](adr/0001-hosting-and-harness-transport.md): the harness speaks WebSocket only (its hosting plan is superseded). [ADR 0002](adr/0002-learner-driven-scenarios-and-scale-target.md): the learner drives, the agent is an optional helper that acts when asked, scenarios replace lessons, RabbitMQ handles sandbox start and teardown, and the design target is 30 concurrent sandboxes. [ADR 0003](adr/0003-course-vm-hosting.md): one course-provided VM runs the stack, `envmgr` and the sandboxes, and is reached over Tailscale. Builds on the original brief in [PROJECT-BRIEF.md](PROJECT-BRIEF.md), which is still the source for the cluster design and the agent tool list. This document decides **how the work is split into repos, services, machines and code**.
+> Planning output, 2026-11-02, updated by four decision records. [ADR 0001](adr/0001-hosting-and-harness-transport.md): the harness speaks WebSocket only (its hosting plan is superseded). [ADR 0002](adr/0002-learner-driven-scenarios-and-scale-target.md): the learner drives, the agent is an optional helper that acts when asked, scenarios replace lessons, RabbitMQ handles sandbox start and teardown, and the design target is 30 concurrent sandboxes. [ADR 0003](adr/0003-course-vm-hosting.md): one course-provided VM runs the stack, `envmgr` and the sandboxes, and is reached over Tailscale. [ADR 0004](adr/0004-node-machines-in-the-sandbox.md): the cluster nodes are Sysbox system containers inside the sandbox VM, and the VM is the learner's workstation. Builds on the original brief in [PROJECT-BRIEF.md](PROJECT-BRIEF.md), which is still the source for the cluster design and the agent tool list. This document decides **how the work is split into repos, services, machines and code**.
 >
 > **"kubernetes-learning" is a placeholder name** (the old working name is dropped). See [§12](#12-naming) for where the name appears and when to replace it.
 >
@@ -402,7 +402,7 @@ docs/
 ├── ARCHITECTURE.md      # this file
 ├── FEATURES.md          # every feature: what the user sees + how it works
 ├── PROJECT-BRIEF.md     # the original brief
-├── adr/                 # architecture decision records, one file per decision (0001: harness transport, 0002: learner-driven scenarios + scale target, 0003: course VM hosting)
+├── adr/                 # architecture decision records, one file per decision (0001: harness transport, 0002: learner-driven scenarios + scale target, 0003: course VM hosting, 0004: node machines)
 ├── assets/diagrams/     # generate.py and the SVG sheets it writes; edit the script, never an SVG
 └── LICENSE
 ```

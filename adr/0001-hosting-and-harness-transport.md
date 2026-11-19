@@ -1,6 +1,6 @@
 # ADR 0001: Hosting over a WireGuard mesh, Proxmox sandboxes, WebSocket-only harness
 
-- **Status:** Accepted · 2026-11-04 · **DECIDED** by Filip. **Superseded** for hosting by [ADR 0003](0003-course-vm-hosting.md) on 2026-11-14: §1 (the WireGuard mesh), §2 (Proxmox sandboxes), §3 (`envmgr` on the Proxmox host) and the OpenTofu and Packer plans in §5 no longer apply. §4 (the WebSocket-only harness) and the reconcile loop in §5 still hold.
+- **Status:** Accepted · 2026-11-04 · **DECIDED** by Filip. **Superseded** for hosting by [ADR 0003](0003-course-vm-hosting.md) on 2026-11-14: §1 (the WireGuard mesh), §2 (Proxmox sandboxes), §3 (`envmgr` on the Proxmox host) and the OpenTofu and Packer plans in §5 no longer apply. §4 (the WebSocket-only harness) and the reconcile loop in §5 still hold. The Docker provider is dropped by [ADR 0004](0004-node-machines-in-the-sandbox.md) on 2026-11-19.
 - **Changes:** the single-host deployment and the vsock transport from [PROJECT-BRIEF](../PROJECT-BRIEF.md) §1, §4, §5 and §10, and the matching parts of [ARCHITECTURE](../ARCHITECTURE.md) as of 2026-11-02.
 
 ---

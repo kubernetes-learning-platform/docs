@@ -1,6 +1,7 @@
 # ADR 0003: One course-provided VM, reached over Tailscale
 
 - **Status:** Accepted · 2026-11-12, revised 2026-11-14 · **DECIDED** by Filip. The sandbox type stays **OPEN** until nested virtualization is checked on the VM (platform#6). The deploy format is **OPEN**.
+- **Changed by:** [ADR 0004](0004-node-machines-in-the-sandbox.md), 2026-11-19. The cluster inside a sandbox is Sysbox node machines instead of k3d, the no-KVM column of §3 becomes Sysbox nodes with a workstation container on the course VM, and §4's build order no longer starts with a Docker provider. The KVM column of §3 still holds.
 - **Supersedes:** the hosting parts of [ADR 0001](0001-hosting-and-harness-transport.md): the three machines on a WireGuard mesh (§1), Proxmox sandboxes (§2), `envmgr` on the Proxmox host (§3) and the OpenTofu and Packer plans (§5). ADR 0001's WebSocket-only harness (§4) and `envmgr`'s reconcile loop (§5) still hold.
 - **Changes:** the machine details in [ADR 0002](0002-learner-driven-scenarios-and-scale-target.md) (the Hetzner box, the home PC, RabbitMQ on the mesh address). The rest of ADR 0002 holds.
 
