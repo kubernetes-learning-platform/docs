@@ -18,7 +18,7 @@
 | **Machines** | **1** | One course-provided VM (16 vCPU, 32 GB) runs the stack, `envmgr` and the sandboxes. It is reached over Tailscale. |
 | **Libraries we write** | **4** | Contracts (C# + TS), SandboxClient, Scenarios, Agent |
 | **REST controllers** | **4** | Auth, Sessions, Scenarios, Events (+ 1 WebSocket endpoint) |
-| **gRPC services** | **1** | EnvironmentManager (in `envmgr`) |
+| **gRPC services** | **1** | EnvironmentManagerService (in `envmgr`) |
 | **Other build outputs** | **2** | Sandbox template (a qcow2 image, or a container image on the fallback path), scenario demo images |
 | **Infra code** | **0** | The VM isn't ours to create. An install script sets it up (CALL). |
 
@@ -232,7 +232,7 @@ Runs as a systemd service directly on the course VM (CALL, [ADR 0003](adr/0003-c
 
 No REST controllers. **One gRPC service** on a host address only the stack can reach (CALL):
 
-| gRPC `EnvironmentManager` | Purpose |
+| gRPC `EnvironmentManagerService` | Purpose |
 |---|---|
 | `CreateSandbox` | Takes a sandbox from the warm pool (or clones one from the template). Returns sandbox id + status. Used by the `sbx` dev CLI; in Real mode, `api` starts sandboxes through the work queue (CALL). |
 | `DestroySandbox` | Stops and deletes the sandbox, and frees its IP lease and token. Used by the `sbx` dev CLI; in Real mode, `api` uses the work queue (CALL). |
@@ -327,7 +327,7 @@ The terminal and the editable inspector are the learner's, and read-only with a 
 ```
 proto/kubernetes_learning/v1/
   common.proto     ids, timestamps, error
-  envmgr.proto     EnvironmentManager service, Sandbox, SandboxStatus
+  envmgr.proto     EnvironmentManagerService, Sandbox, SandboxStatus
   harness.proto    HarnessFrame + hello / exec / pty / file / fault / check / snapshot-request messages
   topology.proto   Entity, Edge, TopologySnapshot, TopologyDiff, ClusterEvent, TrafficSample
   view.proto       ViewIntent: focus / highlight / annotate / show_config / clear

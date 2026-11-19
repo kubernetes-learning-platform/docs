@@ -471,3 +471,19 @@ To do once this plan is accepted, each in its own issue or commit:
 - **Budget size** (OPEN). The token number per session, and the global limit on concurrent turns.
 - **Scenario count for the first milestone** (OPEN). The design shows 8; the plan says 3–5, and the curriculum notes suggest 3 complete ones first.
 - **Presentations** (planned, DECIDED to build later). Their file format, and whether a quiz answer is recorded as progress.
+
+## 7. What the PR changed
+
+contracts#9 follows this plan, with these differences:
+
+- **Service name:** `EnvironmentManagerService`, because `buf lint` STANDARD requires the `Service` suffix.
+- **Names unique across the package**, since every file shares `kubernetes_learning.v1`:
+  - The harness's reply to `RevertFault` is `RevertFaultResult`, because `FaultReverted` is the browser's message.
+  - `ApplyResult` is one message, used on the harness link and on the browser socket.
+  - Generic names gained a prefix: `QuestionOption`, `HelperOffReason`, `SessionEndReason`, `ScenarioLevel`.
+- **Check subjects:** a scenario names its subject before the UID exists, and the browser only sees results. So `CheckSpec.subject` is a `ResourceRef` (kind, namespace, name), and `CheckResult.subject_id` carries the entity ID the harness resolved.
+- **One actor field:** `ChatMessage` and `TerminalOutput` use the `ServerMessage` envelope's `actor` instead of their own.
+- **Diff fields:** `upserted_entities`, `removed_entity_ids`, `upserted_edges` and `removed_edge_ids`.
+- **Edge IDs** use `missing_target` in place of `to_id` when the target doesn't exist, so two missing targets of one entity don't collide.
+- **`ExecExit` gained `error`,** for a command that couldn't start, couldn't reach its node or timed out.
+- **Left for later, as §4 says:** `Partition`, `TrafficStart`, `TrafficStop` and the harness's `TrafficSample` frame. `ClusterStatus` has only a phase and a message.
