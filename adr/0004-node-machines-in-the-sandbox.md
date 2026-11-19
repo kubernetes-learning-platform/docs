@@ -68,8 +68,9 @@ If platform#6 finds no `/dev/kvm` on the course VM, only the outer layer changes
 
 - **Local machines stay light.** They run Docker Desktop for Postgres and Caddy, the .NET 10 SDK and Node, and no VMs. `envmgr` and the harness run as plain processes through the process provider for quick tests, and `api` runs against `FakeSandboxSession`.
 - **Real sandboxes run on a test VM:** a Hetzner cloud server of Filip's, in the tailnet, until the course VM arrives. Hetzner Cloud has no nested virtualization (checked 2026-11-19: no `/dev/kvm`), so the test VM runs the Sysbox path of §4, which is the course VM's fallback anyway. The node image, the harness and the relay are the same on both paths.
-- **So the `SysboxProvider` comes first.** A real sandbox exists before the course VM does. The `QemuProvider` and the qcow2 template follow once platform#6 confirms KVM on the course VM.
-- **The test VM is for the team's testing only,** never for learners or the demo. Its sandboxes share its kernel, so nothing else of value runs on it, and only SSH and Tailscale reach it. It isn't hosting: ADR 0003's one course VM still runs the stack and the demo.
+- **So the `SysboxProvider` comes first.** A real sandbox exists before the course VM does.
+- **The QEMU path is tested on a small home Proxmox server** of Filip's: bare metal with KVM and nested virtualization on, 4 cores and 8 GB. An Ubuntu VM there, with the host CPU type, runs libvirt and `envmgr`, so sandbox VMs nest inside it as they would on the course VM, one at a time. The `QemuProvider` and the qcow2 template are built and tested there, and used on the course VM if platform#6 finds KVM.
+- **The test VM is for the team's testing only,** never for learners or the demo. Its sandboxes share its kernel, so nothing else of value runs on it, and only SSH and Tailscale reach it. The home server isn't a CI runner: self-hosted runners serve only private repos, and the runner stays on the course VM (platform#14). It isn't hosting: ADR 0003's one course VM still runs the stack and the demo.
 - **Considered first and dropped:** a Lima VM with nested virtualization on the Mac (`vmType: vz`, Apple M3 or later). It would take about 8 GB of a 16 GB Mac and an arm64 template, and it was never checked.
 - The Docker provider (Docker-in-Docker with k3d) is dropped. It was the Mac's dev path and the base of the old fallback, and both are replaced. The DinD Compose profile (platform#13) no longer applies.
 
@@ -86,7 +87,7 @@ If platform#6 finds no `/dev/kvm` on the course VM, only the outer layer changes
 - A Sysbox install, a node image and a workstation image join the build.
 - The harness learns targets: it runs node commands through ssh and watches the node containers.
 - Two providers to write: `SysboxProvider` first, for the test VM and the fallback, then `QemuProvider` once the course VM has KVM.
-- The QEMU path can't be tested until the course VM confirms KVM, and nested VMs boot slower.
+- The QEMU path is tested on a small home server, one sandbox at a time, and nested VMs boot slower.
 
 ## Labels changed
 

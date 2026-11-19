@@ -258,7 +258,7 @@ No REST controllers. **One gRPC service** on a host address only the stack can r
 - A second sandbox host later is just a second consumer, with no scheduler to write.
 - It uses the official `RabbitMQ.Client` with automatic recovery. The harness never touches the broker, so Native AOT isn't affected.
 
-**QEMU provider** (used if the course VM has KVM, built after the Sysbox provider, [ADR 0003 §3](adr/0003-course-vm-hosting.md#3-the-sandbox-type-depends-on-kvm-open-until-checked)):
+**QEMU provider** (used if the course VM has KVM, built after the Sysbox provider and tested on a home Proxmox server, [ADR 0003 §3](adr/0003-course-vm-hosting.md#3-the-sandbox-type-depends-on-kvm-open-until-checked)):
 - **Template:** a qcow2 image built by Packer with the QEMU builder from `sandbox/images/base/` (Ubuntu, Docker, Sysbox, kubectl, the node image, the harness, every scenario image), by the sandbox-template workflow on the course VM (platform#21).
 - **Clone:** a linked clone per sandbox, a qcow2 file backed by the template, so creating one takes seconds. Domains are named `kl-sbx-<id>`, in a dedicated libvirt storage pool.
 - **Identity:** a cloud-init NoCloud seed with a static address on `10.67.0.0/24` and user-data that writes `/etc/kubernetes-learning/harness.env` (sandbox id, token, envmgr URL). Every clone is otherwise identical.
@@ -597,7 +597,7 @@ platform/
 
 | Person | Runs locally |
 |---|---|
-| Filip | No VMs on the Mac. Docker Desktop runs the dev Compose, and `envmgr` with the process provider runs the harness as a plain process, for quick runs. Real sandboxes run on a Hetzner test VM in the tailnet, through the `SysboxProvider` ([ADR 0004 §5](adr/0004-node-machines-in-the-sandbox.md#5-development-and-testing-call-revised-2026-11-19), sandbox#11). |
+| Filip | No VMs on the Mac. Docker Desktop runs the dev Compose, and `envmgr` with the process provider runs the harness as a plain process, for quick runs. Real sandboxes run on a Hetzner test VM in the tailnet, through the `SysboxProvider`, and the QEMU path is tested in a nested Ubuntu VM on a small home Proxmox server with KVM ([ADR 0004 §5](adr/0004-node-machines-in-the-sandbox.md#5-development-and-testing-call-revised-2026-11-19), sandbox#11). |
 | Person 2 and Person 3 | Windows. `platform/dev` Compose runs Postgres and Caddy. `api` (`dotnet run`, port 5149) and `web` (`next dev`, port 3000) run on the host behind Caddy on `localhost:8080`, with the same routes as production. `api` runs with `Sandbox__Mode=Fake`: `FakeSandboxSession` plays a scripted cluster, picked with `Sandbox__FakeScript`, so no broker or sandbox is needed. |
 
 ---
@@ -627,7 +627,7 @@ The core works and can be demonstrated before any LLM work, because the product 
 3. **envmgr restarts break the `Connect` stream.** Flow 10 (reconnect, `SnapshotRequest`, fresh snapshot) has to work from Milestone 1, not as polish. Test it by restarting envmgr in the middle of a scenario.
 4. **Demo day depends on the course VM and on Tailscale.** Test from the venue beforehand and keep a phone hotspot as a backup.
 5. **envmgr runs on the VM host and is the only thing a sandbox can reach.** Users get a real bash in the sandbox, so a bug in the harness endpoint is a host bug, on the same machine as the stack. Keep that endpoint tiny (token check, then frames).
-6. **Nested virtualization is unknown, twice.** Without `/dev/kvm` on the course VM (platform#6), sandboxes fall back to Sysbox node containers and a workstation container on the course VM, sharing its kernel with the stack ([ADR 0004 §4](adr/0004-node-machines-in-the-sandbox.md#4-without-kvm-decided-as-the-fallback)). Until then, real sandboxes are tested on a Hetzner test VM, which has no KVM either, so the QEMU path stays untested until the course VM confirms KVM. Nested VMs boot slower than on bare metal.
+6. **Nested virtualization is unknown, twice.** Without `/dev/kvm` on the course VM (platform#6), sandboxes fall back to Sysbox node containers and a workstation container on the course VM, sharing its kernel with the stack ([ADR 0004 §4](adr/0004-node-machines-in-the-sandbox.md#4-without-kvm-decided-as-the-fallback)). Until then, the Sysbox path is tested on a Hetzner test VM, and the QEMU path in a nested VM on a small home Proxmox server, one sandbox at a time. Nested VMs boot slower than on bare metal.
 7. **Tailscale start order.** Caddy listens only on the VM's Tailscale address, so whatever runs it must start after Tailscale, or the port binding fails at boot.
 8. **GitHub Packages needs a token to install, even for public packages.** Each person gives the GitHub CLI `read:packages` once and exports `GITHUB_PACKAGES_TOKEN`, which the committed `nuget.config` and `.npmrc` read ([README → The contracts packages](README.md#the-contracts-packages)). CI passes `GITHUB_TOKEN` with `packages: read`, and each consuming repo is granted read access on both packages under **Manage Actions access**; a new consumer needs the same grant, or its restore fails with 403.
 9. **The repos are public.** Everything committed is public at once. Push protection blocks known token formats, but real `.env` files, keys and personal data must never be committed. Commits use Filip's noreply address and are signed.
