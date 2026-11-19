@@ -173,7 +173,9 @@ The sandbox type depends on whether the VM supports nested virtualization (**OPE
 
 | Browser → api (`ClientMessage`) | api → Browser (`ServerMessage`, each with a per-session `seq`) |
 |---|---|
-| `ChatSend` · `TerminalInput` · `TerminalResize` · `ApplyManifest{yaml}` · `HelperStop` · `AgentAnswer{questionId, optionId \| text}` · `ScenarioNext` · `StepReset` · `Resync{afterSeq}` | `ChatDelta` · `ChatMessage` · `ToolCallStarted` · `ToolCallFinished` · `AgentQuestion{questionId, text, options[]}` · `HelperState{idle \| acting \| waiting}` · `TopologySnapshot` · `TopologyDiff` · `ClusterEvent` · `ViewIntent` · `FaultMarked` · `FaultReverted` · `TrafficSample` · `ScenarioProgress` · `TerminalOutput{source: user\|agent}` · `SessionStatus{queued, position \| starting \| live \| reconnecting \| ended}` · `Error` |
+| `ChatSend` · `TerminalInput` · `TerminalResize` · `ApplyManifest{requestId, yaml}` · `ManifestRequest{requestId, entityId}` · `HelperStop` · `AgentAnswer{questionId, optionId \| text}` · `HintRequest{stepId}` · `ScenarioNext{stepId}` · `StepReset{stepId}` · `Resync{afterSeq}` | `SessionStatus{queued, position \| starting \| live \| reconnecting \| ended \| failed}` · `HelperState{idle \| acting \| waiting \| off}` · `ChatDelta` · `ChatMessage` · `ToolCallStarted` · `ToolCallFinished` · `AgentQuestion{questionId, text, options[]}` · `AgentQuestionClosed` · `TerminalOutput` · `TopologySnapshot` · `TopologyDiff` · `ClusterEvent` · `ViewIntent` · `FaultMarked` · `FaultReverted` · `TrafficSample` · `ScenarioProgress` · `HintRevealed` · `ManifestResponse` · `ApplyResult` · `Error` |
+
+Every `ServerMessage` also carries its time and an `actor` (learner, helper, scenario or system), which says whose terminal output or chat message it is. The messages are those of contracts `v0.1`.
 
 Health: `MapHealthChecks("/healthz")`, not a controller.
 
@@ -386,7 +388,7 @@ The terminal and the editable config inspector belong to the learner by default.
 | Helper is | Terminal + inspector | Helper can use |
 |---|---|---|
 | **Idle** | Writable. Input goes to the shared PTY, a real bash in the sandbox. Apply sends `ApplyManifest{yaml}`, and the harness applies it. | Nothing, because no turn is running |
-| **Acting** on a request | Read-only, with a **Stop** button (CALL). Commands run on the **Exec channel**, so the LLM gets clean stdout/stderr/exit codes, and they're mirrored into the terminal as `agent$ <cmd>` + output (`TerminalOutput{source: agent}`). A chat message sent now waits until the turn ends (CALL). | Observe, view, execute and fault tools |
+| **Acting** on a request | Read-only, with a **Stop** button (CALL). Commands run on the **Exec channel**, so the LLM gets clean stdout/stderr/exit codes, and they're mirrored into the terminal as `agent$ <cmd>` + output (`TerminalOutput` with actor `helper`). A chat message sent now waits until the turn ends (CALL). | Observe, view, execute and fault tools |
 | **Waiting** on its question | Writable | Nothing until the answer arrives |
 
 ---
