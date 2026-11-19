@@ -4,6 +4,7 @@
 - **Changes:** the agent-driven product shape, the control model and the lesson design in [ARCHITECTURE](../ARCHITECTURE.md) and [FEATURES](../FEATURES.md). It also overrides [PROJECT-BRIEF](../PROJECT-BRIEF.md) §11's rejection of a job queue, **for sandbox provisioning only**.
 - **Builds on:** [ADR 0001](0001-hosting-and-harness-transport.md). The isolated sandbox bridge doesn't change.
 - **Changed by:** [ADR 0003](0003-course-vm-hosting.md), 2026-11-14. The machine details below (the Hetzner box, the home PC, the mesh, RabbitMQ on `10.66.0.1`) are replaced by one course-provided VM reached over Tailscale. The demo runs on the VM, shown from Filip's laptop. Everything else here holds.
+- **Revised:** 2026-11-19, §4's scenario format, to match contracts `v0.1` ([schema plan](../plans/schema-v0.1.md)): checks gain a `title` and an optional `subject`, steps gain `optional`, and scenarios gain `summary` and `prerequisites`.
 
 Labels: **DECIDED** by Filip · **CALL** chosen while writing this, change freely · **OPEN** not decided.
 
@@ -61,18 +62,24 @@ A scenario is a folder, not a VM image. **One shared VM template** holds the too
 # broken-ingress/scenario.yaml (format is a CALL)
 id: broken-ingress
 title: Fix a broken ingress
+summary: The shop's site returns 503. Find out why.   # one line for the home screen
 level: beginner
+prerequisites: []             # scenario IDs to finish first
 namespaces: [shop]            # everything the scenario owns; reset wipes these
 images: [demo-web:v1]         # must be baked into the VM template
 steps:
   - id: restore-the-site
     goal: The site returns 503. Find out why and fix it.
+    optional: false           # true for a challenge step
     start: manifests/step-1/  # full state at this step's start, used by start and reset
     enter: null               # optional: applied when arriving from the previous step
     faults: []                # optional: typed faults to inject, recorded in the ledger
     checks:
-      - resource: { kind: Service, namespace: shop, name: web }
-      - http: { url: "http://localhost/", host: shop.localhost, status: 200 }
+      - title: Service web exists in namespace shop
+        resource: { kind: Service, namespace: shop, name: web }
+      - title: The site answers 200
+        subject: { kind: Ingress, namespace: shop, name: web }   # where the result is drawn
+        http: { url: "http://localhost/", host: shop.localhost, status: 200 }
     hints:                    # shown on request, no LLM needed
       - Which Service does the Ingress point at? Does it exist?
     helper: |                 # optional notes for demonstrating this step

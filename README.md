@@ -23,7 +23,7 @@ The sandbox is deleted when the session ends.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/system-map-dark.svg">
-  <img src="assets/diagrams/system-map-light.svg" width="100%" alt="The whole system. A browser in the tailnet reaches the Caddy proxy on the course VM, which serves web and forwards to api. api uses Postgres, RabbitMQ and an LLM API, and reaches envmgr on the same VM. envmgr relays to the harness inside a sandbox, which drives a three-node k3d cluster.">
+  <img src="assets/diagrams/system-map-light.svg" width="100%" alt="The whole system. A browser in the tailnet reaches the Caddy proxy on the course VM, which serves web and forwards to api. api uses Postgres, RabbitMQ and an LLM API, and reaches envmgr on the same VM. envmgr relays to the harness inside a sandbox VM, which drives three Sysbox node machines.">
 </picture>
 
 A browser in the team's Tailscale tailnet connects to the stack on the course-provided VM. The same VM runs `envmgr` and one sandbox per session.
@@ -37,7 +37,7 @@ A browser in the team's Tailscale tailnet connects to the stack on the course-pr
 | **RabbitMQ** | Work queue for sandbox start and teardown requests. No other traffic uses it. |
 | **envmgr** | Sandbox manager, a systemd service on the VM. Maintains a pool of ready sandboxes, assigns one per session, deletes it afterwards, and relays messages between `api` and the sandbox. |
 | **harness** | Agent inside each sandbox. Executes commands, provides the terminal, runs scenario checks, and watches the cluster to report changes. |
-| **k3d cluster** | The Kubernetes cluster: three nodes (`cp`, `w1`, `w2`) running as containers inside the sandbox. |
+| **Nodes** | The Kubernetes cluster: three nodes (`cp`, `w1`, `w2`), small machines running k3s inside the sandbox that the learner can `ssh` into. The sandbox VM itself is the learner's workstation. |
 
 `web`, `api`, `envmgr` and `harness` are developed in this project. Postgres, RabbitMQ and Caddy are standard components.
 
@@ -46,7 +46,7 @@ A browser in the team's Tailscale tailnet connects to the stack on the course-pr
 1. **The learner is in control.** The terminal belongs to the learner by default, and scenarios and their checks do not require an LLM. The helper acts only on request, shows every command, and then asks how to continue.
 2. **The helper's logic runs in the backend.** The LLM loop runs in `api`. The `harness` only executes commands and observes, so API keys never enter the VM, and a VM can be lost without losing the conversation.
 3. **The view reflects actual cluster state.** The canvas is drawn only from what the harness observes in Kubernetes. The helper can move the camera (`focus`, `highlight`, `annotate`) but cannot change what is shown.
-4. **Faults are typed operations.** `kill_node`, `partition` and `bad_image` are recorded and reversible, so the UI knows exactly what was broken.
+4. **Faults are typed operations.** Stopping a node or a service, deleting a pod or setting a bad image is recorded and reversible, so the UI knows exactly what was broken.
 
 ### Hosting
 
@@ -56,7 +56,7 @@ One **course-provided VM** (16 vCPU, 32 GB RAM) runs everything. Nothing is publ
 |---|---|
 | **The stack** | Caddy, `web`, `api`, Postgres, RabbitMQ. The deploy format is OPEN. |
 | **envmgr** | A systemd service on the host, because it needs `/dev/kvm` and libvirt |
-| **The sandboxes** | One per session, on an isolated network. A QEMU/libvirt VM if the VM supports nested virtualization, otherwise a Sysbox container (OPEN until checked). |
+| **The sandboxes** | One per session, on an isolated network: a QEMU/libvirt VM if the VM supports nested virtualization (OPEN until checked), with three Sysbox node machines inside ([ADR 0004](adr/0004-node-machines-in-the-sandbox.md)). |
 
 The demo laptop, the team and the graders use the app from devices in the tailnet.
 
@@ -141,7 +141,7 @@ See [ARCHITECTURE §6.1](ARCHITECTURE.md#61-who-drives-decided-adr-0002) and [FE
 | [FEATURES.md](FEATURES.md) | Every feature, explained twice: what the user sees and how it works technically |
 | [PROJECT-BRIEF.md](PROJECT-BRIEF.md) | The original brief: product intent, sandbox design, agent tools, rejected alternatives |
 | [adr/](adr/) | Architecture decision records, one per decision. [0001](adr/0001-hosting-and-harness-transport.md): the WebSocket-only harness; its hosting plan is superseded by 0003. [0002](adr/0002-learner-driven-scenarios-and-scale-target.md): learner-driven scenarios, the optional helper, RabbitMQ, the 30-sandbox design target. [0003](adr/0003-course-vm-hosting.md): one course-provided VM runs the stack and the sandboxes, reached over Tailscale. [0004](adr/0004-node-machines-in-the-sandbox.md): cluster nodes are Sysbox machines inside the sandbox VM, which is the workstation |
-| [plans/](plans/) | Plans for upcoming work. [schema-v0.1](plans/schema-v0.1.md): every message of contracts v0.1, file by file |
+| [plans/](plans/) | Plans for upcoming work. [schema-v0.1](plans/schema-v0.1.md): every message of contracts v0.1, file by file. [milestone-1](plans/milestone-1.md): what Milestone 1 builds in each repo, and in what order |
 
 The diagrams are generated by [`assets/diagrams/generate.py`](assets/diagrams/generate.py). To change one, edit its definition in that file and run the script.
 
@@ -192,7 +192,8 @@ kubernetes-learning/                          # local workspace
 │   │   └── KubernetesLearning.Sbx/           # dev CLI: create | exec | watch | destroy
 │   ├── tests/
 │   └── images/
-│       ├── base/                             # sandbox template (Linux + Docker + k3d + harness)
+│       ├── node/                             # node machine image (systemd + sshd + k3s)
+│       ├── base/                             # sandbox template (Ubuntu + Docker + Sysbox + node image + harness)
 │       └── scenarios/                        # demo-web v1/v2, traffic-probe
 ├── api/
 │   ├── src/
@@ -208,17 +209,17 @@ kubernetes-learning/                          # local workspace
 │       ├── lib/                              # REST + WebSocket (protobuf) clients
 │       └── state/                            # topology / view / scenario / session state
 └── platform/
-    ├── .github/workflows/                    # reusable: dotnet-ci, node-ci, proto-ci, contracts-bump, lint-sync, container-publish, release-binary, sandbox-template, pr-title, copilot-review
+    ├── .github/workflows/                    # reusable: dotnet-ci, node-ci, proto-ci, contracts-bump, lint-sync, container-publish, release-version, sandbox-release, sandbox-template, pr-title, copilot-review
     ├── lint/                                 # canonical .editorconfig, analyzers, biome.json, sync.sh
     ├── deploy/vm/                            # install script, envmgr unit, libvirt network, nftables, stack config
-    └── dev/                                  # local dev Compose: Postgres + RabbitMQ, optional DinD sandbox profile
+    └── dev/                                  # local dev Compose: Postgres + Caddy, one origin on localhost:8080
 ```
 
 ---
 
 ## Getting started
 
-The code repositories are scaffolded and build. Implementation starts in Milestone 1.
+The code repositories are scaffolded and build. Milestone 1 is planned in [plans/milestone-1.md](plans/milestone-1.md), and its issues are in each repo's **Milestone 1**. Each repo keeps its scripts in `scripts/`.
 
 ```bash
 mkdir kubernetes-learning && cd kubernetes-learning
@@ -230,10 +231,11 @@ done
 Requirements:
 - .NET 10 SDK
 - Node.js 24
-- Docker Desktop (give it ≥ 6 GB of memory for one local sandbox)
+- Docker Desktop, for the dev Compose and the database tests
+- Only for running real sandboxes on a Mac: Lima, on Apple M3 or later (see `sandbox`)
 - The GitHub CLI (`gh`), signed in as a member of the organization, for the `contracts` packages (below)
 
-KVM is not required for day-to-day development. `envmgr` has a **Docker provider** for macOS/Windows, and `api` can run against a **fake sandbox** that plays a scripted cluster. Access to the deployed application requires joining the team's Tailscale tailnet; ask Filip for an invite.
+KVM is not required for day-to-day development. `api` runs against a **fake sandbox** that plays a scripted cluster, on Windows and macOS. Real sandboxes run in a Lima VM with nested virtualization on a Mac, or on the course VM. Access to the deployed application requires joining the team's Tailscale tailnet; ask Filip for an invite.
 
 ### The contracts packages
 
@@ -279,22 +281,21 @@ More in [platform → Conventions](https://github.com/kubernetes-learning-platfo
 | | Owns |
 |---|---|
 | **Filip** | Infra for every repo (CI, lint, releases, deploy), the VM and the tailnet, `contracts`, `sandbox`, the Scenarios and Agent libraries, curated scenarios |
-| **Person 2** | `api`: auth, sessions, WebSocket gateway, persistence, event log, queue integration, progress |
-| **Person 3** | `web`: topology canvas, scenario panel, chat and question card, terminal, config inspector, timeline/replay |
+| **Person 2 and Person 3** | `api` and `web`, split by feature: each takes whole features through both repos, such as sign-in and sessions, or the live lab with its socket, event log and canvas |
 
 ## Roadmap
 
 | Milestone | Demoable result |
 |---|---|
-| **M1 Sandbox** | A 3-node cluster comes up in a sandbox (Docker provider first); commands run over the harness WebSocket; the UI renders a (fake) topology |
-| **M2 Scenarios** | One click starts a queued sandbox; a real terminal; the first scenario with checks and reset, no LLM needed; the stack is deployed on the course VM |
-| **M3 Live view** | Real topology from the cluster's watch streams, including Ingress; YAML inspector |
-| **M4 Helper** | The optional helper: typed tools, streamed answers, demonstrations with feedback questions, an agent-driven camera |
-| **M5 Scenarios + scale** | The full 3–5 scenarios, the `scenarios` repo, a load test, timeline + replay, traffic animation |
+| **Milestone 1** | A real sandbox with three node machines comes up from the `sbx` CLI on a Lima VM, and commands run over the harness WebSocket. In the browser, you sign in, start a session and watch the fake cluster live on the canvas ([plan](plans/milestone-1.md)) |
+| **Milestone 2** Scenarios | The two halves joined: one click starts a queued real sandbox; a real terminal; the first scenario with checks and reset, no LLM needed; the stack is deployed on the course VM |
+| **Milestone 3** Live view | Real topology from the cluster's watch streams, including Ingress; YAML inspector |
+| **Milestone 4** Helper | The optional helper: typed tools, streamed answers, demonstrations with feedback questions, an agent-driven camera |
+| **Milestone 5** Scenarios + scale | The full 3–5 scenarios, the `scenarios` repo, a load test, timeline + replay, traffic animation |
 
 The final demo is **by June 2027**. The design target is 30 concurrent sandboxes, and only what the demo needs gets provisioned.
 
-**Stretch:** bring-your-own repo, add/remove nodes, spectator mode, real VMs as nodes.
+**Stretch:** bring-your-own repo, add/remove nodes, spectator mode.
 
 ## License
 

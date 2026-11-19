@@ -11,7 +11,8 @@ Every feature of the platform: first **what the user sees**, then **how it works
 
 **How it works:**
 - Sandboxes run on one **course-provided VM**. **envmgr**, a daemon on that VM, keeps 1–2 **sandboxes** pre-booted (the "warm pool"). Each sandbox is a small VM of its own, a linked clone of one template, so making a new one takes seconds. If the course VM can't run nested VMs, sandboxes are containers instead.
-- Inside each sandbox, **k3d** runs **k3s** (lightweight Kubernetes). Each "node" is a Docker container, so the cluster comes up in seconds instead of minutes.
+- Inside each sandbox, the three nodes are small machines: Sysbox system containers running systemd, sshd and **k3s** (lightweight Kubernetes). They start in seconds, and `ssh w2`, `systemctl` and `journalctl` work as they do on real servers.
+- The sandbox VM itself is your workstation, where your shell and the harness run, so breaking a node never cuts you off ([ADR 0004](adr/0004-node-machines-in-the-sandbox.md)).
 - Every image the cluster needs is baked into the sandbox template. Nothing is downloaded when a session starts.
 - libvirt runs the sandboxes, not envmgr, so restarting envmgr doesn't kill running sessions.
 - The sandbox is destroyed when the session ends or after ~30 minutes idle.
@@ -72,10 +73,11 @@ Nothing happens until you answer.
 - This is the second of the **two streams**: the **state stream** decides *what exists*, and the **intent stream** decides *where you look*.
 
 ## 7. Live terminal
-**What you see:** a real terminal into the cluster that's yours from the start. It's read-only only while the helper is acting, and you watch its commands scroll by as `agent$ kubectl …`.
+**What you see:** a real terminal on your workstation, with `kubectl` pointed at the cluster and `ssh` into each node. It's yours from the start. It's read-only only while the helper is acting, and you watch its commands scroll by as `agent$ kubectl …`.
 
 **How it works:**
-- **xterm.js** in the browser connects to a real bash in the sandbox through a **PTY** (pseudo-terminal) created by the harness.
+- **xterm.js** in the browser connects to a real bash on the workstation through a **PTY** (pseudo-terminal) created by the harness.
+- You have no sudo on the workstation, and root only inside the nodes, through `ssh` and `sudo` there.
 - Keystrokes go up as `TerminalInput`, and output comes back as `TerminalOutput`, over the same pipe as everything else.
 - The helper's commands run on a separate **exec channel**, so the LLM gets clean output and exit codes. They're mirrored into your terminal so you see everything.
 
@@ -83,20 +85,21 @@ Nothing happens until you answer.
 **What you see:** click any resource to see its full YAML, edit it and hit Apply.
 
 **How it works:**
-- **Monaco** (VS Code's editor) shows the raw manifest the harness attached to each graph entity.
+- **Monaco** (VS Code's editor) shows the resource's YAML, which the harness reads on demand when you click (`ManifestRequest`), with `managedFields` stripped. Snapshots and diffs don't carry YAML.
 - Apply sends `ApplyManifest{yaml}`, and the harness runs the equivalent of `kubectl apply`.
 - The graph updates on its own through the watchers.
 - It's read-only while the helper is acting.
 
 ## 9. Breaking things on purpose
-**What you see:** a scenario starts with something broken, or you ask the helper to "kill a node": the node goes red, its pods get rescheduled onto other nodes, and the broken node gets a badge.
+**What you see:** a scenario starts with something broken, or you ask the helper to "stop a node": the node goes red, its pods get rescheduled onto other nodes, and the broken node gets a badge. Or a node's `k3s-agent` is stopped, and you `ssh` in and fix it.
 
 **How it works:**
 - **Fault tools** are typed, deterministic operations the harness performs. A scenario can inject them, and the helper can use them when you ask:
-  - `kill_node`: stops the node's Docker container
-  - `delete_pod`: deletes a pod
-  - `partition(a, b)`: firewall rules that drop traffic between two node containers
-  - `bad_image`: sets an image tag that doesn't exist
+  - **Stop a node** (`StopNode`): stops the node's container
+  - **Stop a service** (`StopService`): stops a systemd unit inside a node, such as `k3s-agent`
+  - **Delete a pod** (`DeletePod`)
+  - **Bad image** (`BadImage`): sets an image tag that doesn't exist
+  - **Partition** (later): firewall rules that drop traffic between two nodes
 - Every fault is recorded in a **fault ledger** with its undo action, so `revert_fault` can fix it and the UI knows exactly what was broken.
 - The *effects* (node `NotReady`, pods moving) arrive through the normal watchers. It's real Kubernetes behaviour, not an animation.
 - ⚠️ **Demo gotcha:** by default Kubernetes waits ~5 minutes before moving pods off a dead node. The cluster config should shorten these timeouts so rescheduling is visible in seconds.
@@ -134,7 +137,7 @@ Nothing happens until you answer.
 **What you see:** a login, a home screen showing what you've finished and what's next, and one active lab per person that cleans itself up when you walk away.
 
 **How it works:**
-- Auth sits behind an `IAuthProvider` interface. The mechanism is still OPEN, and a light one is enough: the app is only reachable over Tailscale.
+- For now you sign in with a name, and the name is your account. It sits behind an `IAuthProvider` interface, so a sturdier mechanism can replace it later (OPEN). A light one is enough, because the app is only reachable over Tailscale.
 - `scenario_progress` stores each account's status per scenario step. A step the helper demonstrated still counts, and a flag records that it did.
 - An idle reaper in api ends sessions after ~30 minutes, and envmgr has its own hard time limit as a backstop.
 
@@ -142,6 +145,7 @@ Nothing happens until you answer.
 - **One sandbox per session:** a scenario that kills nodes or fills a disk can't touch the host or other sessions.
 - **One way out of a sandbox.** The sandbox sits on an isolated network, and envmgr's harness endpoint is the only address it can reach: no internet, no tailnet, no stack, no other sandboxes, no broker.
 - **No secrets in the sandbox.** Keys stay in api. The sandbox only gets its own one-time token.
+- **No root on the workstation.** You have no sudo and no Docker access on the sandbox VM, and root only inside the nodes, where Sysbox maps it to an unprivileged user. The harness runs as its own user, and only it can read its token ([ADR 0004 §3](adr/0004-node-machines-in-the-sandbox.md#3-who-can-do-what-inside-the-sandbox-decided)).
 - **MVP sandboxes are fully offline.**
 - **Nothing is public.** The whole app is only reachable over Tailscale.
 
@@ -154,7 +158,7 @@ Nothing happens until you answer.
 ## 16. Built for 30 at once (invisible)
 - The design target is **30 concurrent sandboxes**, though only what the demo needs gets provisioned. See [ADR 0002](adr/0002-learner-driven-scenarios-and-scale-target.md).
 - The stack and the sandbox host are separate roles connected by addresses, so a second sandbox host would simply be a second consumer of the queue.
-- RAM is the real limit, so real sandbox usage gets measured on the VM. A load test in M5 runs 30 scripted sessions against the fake sandbox, plus as many real ones as the course VM holds.
+- RAM is the real limit, so real sandbox usage gets measured on the VM. A load test in Milestone 5 runs 30 scripted sessions against the fake sandbox, plus as many real ones as the course VM holds.
 
 ---
 
@@ -162,4 +166,4 @@ Nothing happens until you answer.
 - **Bring your own repo:** clone a public repo, build it inside the sandbox and deploy it. Needs internet egress from the sandbox and more RAM.
 - Adding and removing nodes (`add_node` / `remove_node`).
 - Spectator mode, so others can watch a session live.
-- Real VMs as cluster nodes, KubeVirt provider.
+- KubeVirt provider.

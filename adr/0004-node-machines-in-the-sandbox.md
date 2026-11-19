@@ -43,7 +43,7 @@ Labels: **DECIDED** by Filip · **CALL** chosen while writing this, change freel
 
 - **Limits:** memory and CPU caps on the node containers and on the learner's processes, including a process limit, so a fork bomb or a full disk takes down only that session's VM (CALL: through a systemd slice for the learner and Docker limits for the nodes).
 - **Network:** the VM listens on nothing. Nodes can reach the VM's own address, so traffic from the node network that leaves the VM is dropped (CALL); only the harness talks to `envmgr`. The harness endpoint stays tiny and rejects anything before a valid `Hello` anyway.
-- **The token** works once and identifies one sandbox. Even if a learner got it, they could only pose as their own sandbox and fake their own progress.
+- **The token** belongs to one sandbox for its whole life: the harness reuses it when it redials, and it dies with the sandbox. Even if a learner got it, they could only pose as their own sandbox and fake their own progress.
 - **Patching:** the kernel, Docker and Sysbox are updated by rebuilding the template. A kernel exploit from a node gives root on that one VM, which KVM still contains.
 
 What stays the same: the VM is the boundary that protects the course VM, the stack and other sessions. No secrets enter the sandbox, the LLM key stays in `api`, sandboxes have no internet, and the app is reachable only over Tailscale.

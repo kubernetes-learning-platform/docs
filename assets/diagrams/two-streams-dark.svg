@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="1000" height="560" class="sheet" role="img" aria-labelledby="st sd">
 <title id="st">How a change reaches the screen</title>
-<desc id="sd">How a change reaches the screen. Connections: Terminal to api (command); api to envmgr; envmgr to harness (exec); harness to k3d cluster (change); k3d cluster to harness (watch); harness to envmgr (diff); envmgr to api; api to Canvas (redraw); helper to Canvas (camera only).</desc>
+<desc id="sd">How a change reaches the screen. Connections: Terminal to api (command); api to envmgr; envmgr to harness (exec); harness to the cluster (change); the cluster to harness (watch); harness to envmgr (diff); envmgr to api; api to Canvas (redraw); helper to Canvas (camera only).</desc>
 <style>
 .sheet{--paper:#16110A;--ink:#EDB95F;--soft:#B98C42;--fill:#211909;--grid:#4A3716;--pulse:#FFF3CF;}
 .sheet{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
@@ -65,7 +65,7 @@
 <rect class="box own" x="270" y="80" width="130" height="280" rx="3"/><path class="bar" d="M273 80 h124 a3 3 0 0 1 3 3 v19 h-130 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="335.0" y="95.5">api</text><text class="s" x="335.0" y="208.0">gives each</text><text class="s" x="335.0" y="221.0">message a</text><text class="s" x="335.0" y="234.0">number,</text><text class="s" x="335.0" y="247.0">saves it,</text><text class="s" x="335.0" y="260.0">then sends it</text>
 <rect class="box own" x="470" y="80" width="110" height="280" rx="3"/><path class="bar" d="M473 80 h104 a3 3 0 0 1 3 3 v19 h-110 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="525.0" y="95.5">envmgr</text><text class="s" x="525.0" y="227.5">relays</text><text class="s" x="525.0" y="240.5">both ways</text>
 <rect class="box own" x="660" y="90" width="130" height="70" rx="3"/><path class="bar" d="M663 90 h124 a3 3 0 0 1 3 3 v19 h-130 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="725.0" y="105.5">harness</text><text class="s" x="725.0" y="139.0">runs it</text>
-<rect class="box part" x="840" y="170" width="110" height="100" rx="3"/><text class="t" x="895.0" y="217.5">k3d cluster</text><text class="s" x="895.0" y="231.5">really changes</text>
+<rect class="box part" x="840" y="170" width="110" height="100" rx="3"/><text class="t" x="895.0" y="217.5">the cluster</text><text class="s" x="895.0" y="231.5">really changes</text>
 <rect class="box own" x="660" y="280" width="130" height="70" rx="3"/><path class="bar" d="M663 280 h124 a3 3 0 0 1 3 3 v19 h-130 v-19 a3 3 0 0 1 3 -3z"/><text class="t inv" x="725.0" y="295.5">harness</text><text class="s" x="725.0" y="329.0">watches</text>
 <rect class="box part" x="270" y="390" width="130" height="60" rx="3"/><text class="t" x="335.0" y="417.5">helper</text><text class="s" x="335.0" y="431.5">optional</text>
 <rect class="mask" x="182.6" y="111.0" width="74.8" height="18" rx="2"/>

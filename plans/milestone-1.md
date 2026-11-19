@@ -187,7 +187,7 @@ tests/Api.Tests/                      unit tests, and WebApplicationFactory test
 - **Sign-in:** `LoginRequest{display_name}` finds or creates the user and sets a cookie through ASP.NET Core cookie authentication. The cookie is `Secure` outside local dev, which runs on plain HTTP (CALL). `GET /api/auth/me` returns `User`, or 401.
 - **Sessions:** `POST /api/sessions` with no `scenario_id` starts a blank cluster. A user has at most one active session: a second start returns 409 with `Error{CONFLICT}` (CALL). `DELETE` ends it with `SessionEndReason` `LEARNER`.
 - **`FakeProvisioner`:** marks a new session `STARTING`, then `LIVE` about two seconds later, so the UI shows both (CALL). It asks `SessionRegistry` for a `LiveSession` holding a `FakeSandboxSession`.
-- **Tables:** `users` and `sessions`, as in [ARCHITECTURE §4.1](../ARCHITECTURE.md#41-api--aspnet-core-net-10--person-2--filip). This feature lands the first migration.
+- **Tables:** `users` and `sessions`, as in [ARCHITECTURE §4.1](../ARCHITECTURE.md#41-api--aspnet-core-net-10--person-2-person-3--filip). This feature lands the first migration.
 - **Errors:** REST errors return `Error` as the body.
 
 ### Live lab
