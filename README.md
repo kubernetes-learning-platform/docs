@@ -218,7 +218,7 @@ kubernetes-learning/                          # local workspace
 
 ## Getting started
 
-The code repositories currently contain documentation only. Implementation starts in milestone M1.
+The code repositories are scaffolded and build. Implementation starts in Milestone 1.
 
 ```bash
 mkdir kubernetes-learning && cd kubernetes-learning
@@ -229,11 +229,33 @@ done
 
 Requirements:
 - .NET 10 SDK
-- Node.js LTS
+- Node.js 24
 - Docker Desktop (give it ≥ 6 GB of memory for one local sandbox)
-- A GitHub personal access token with `read:packages`, to install the `contracts` packages from GitHub Packages
+- The GitHub CLI (`gh`), signed in as a member of the organization, for the `contracts` packages (below)
 
 KVM is not required for day-to-day development. `envmgr` has a **Docker provider** for macOS/Windows, and `api` can run against a **fake sandbox** that plays a scripted cluster. Access to the deployed application requires joining the team's Tailscale tailnet; ask Filip for an invite.
+
+### The contracts packages
+
+`sandbox` and `api` install `KubernetesLearning.Contracts`, and `web` installs `@kubernetes-learning-platform/contracts`, from GitHub Packages, which needs a token even to read. Each repo commits a `nuget.config` or `.npmrc` that reads the token from `GITHUB_PACKAGES_TOKEN`, so nobody adds a package source by hand. Set it up once:
+
+```bash
+gh auth refresh --hostname github.com --scopes read:packages
+```
+
+```bash
+echo 'export GITHUB_PACKAGES_TOKEN="$(gh auth token)"' >> ~/.zshrc
+```
+
+Then open a new terminal, and restart Rider or VS Code so they see the variable. `dotnet restore` in `sandbox` or `api` and `npm ci` in `web` should now work. Docker image builds take the token as a build secret:
+
+```bash
+docker build --secret id=github-packages-token,env=GITHUB_PACKAGES_TOKEN --tag api .
+```
+
+- **Without the GitHub CLI,** a classic personal access token with `read:packages` works as `GITHUB_PACKAGES_TOKEN`. Fine-grained tokens don't work with GitHub Packages.
+- **If a restore fails with 401 or 403,** check that `gh auth status` lists `read:packages` and that the variable is set in that shell. If both are fine, your account has no read access to the packages yet; ask Filip.
+- **New versions** arrive on `main` as `build(deps): bump contracts to X.Y.Z` commits from the update bot. Pull, and restore again.
 
 ---
 
