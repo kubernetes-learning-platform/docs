@@ -232,10 +232,9 @@ Requirements:
 - .NET 10 SDK
 - Node.js 24
 - Docker Desktop, for the dev Compose and the database tests
-- Only for running real sandboxes on a Mac: Lima, on Apple M3 or later (see `sandbox`)
 - The GitHub CLI (`gh`), signed in as a member of the organization, for the `contracts` packages (below)
 
-KVM is not required for day-to-day development. `api` runs against a **fake sandbox** that plays a scripted cluster, on Windows and macOS. Real sandboxes run in a Lima VM with nested virtualization on a Mac, or on the course VM. Access to the deployed application requires joining the team's Tailscale tailnet; ask Filip for an invite.
+KVM is not required for day-to-day development. `api` runs against a **fake sandbox** that plays a scripted cluster, on Windows and macOS. Real sandboxes run on the team's test VM in the tailnet until the course VM arrives, so no VM runs on your machine. Access to the deployed application requires joining the team's Tailscale tailnet; ask Filip for an invite.
 
 ### The contracts packages
 
@@ -287,7 +286,7 @@ More in [platform → Conventions](https://github.com/kubernetes-learning-platfo
 
 | Milestone | Demoable result |
 |---|---|
-| **Milestone 1** | A real sandbox with three node machines comes up from the `sbx` CLI on a Lima VM, and commands run over the harness WebSocket. In the browser, you sign in, start a session and watch the fake cluster live on the canvas ([plan](plans/milestone-1.md)) |
+| **Milestone 1** | A real sandbox with three node machines comes up from the `sbx` CLI on the team's test VM, and commands run over the harness WebSocket. In the browser, you sign in, start a session and watch the fake cluster live on the canvas ([plan](plans/milestone-1.md)) |
 | **Milestone 2** Scenarios | The two halves joined: one click starts a queued real sandbox; a real terminal; the first scenario with checks and reset, no LLM needed; the stack is deployed on the course VM |
 | **Milestone 3** Live view | Real topology from the cluster's watch streams, including Ingress; YAML inspector |
 | **Milestone 4** Helper | The optional helper: typed tools, streamed answers, demonstrations with feedback questions, an agent-driven camera |

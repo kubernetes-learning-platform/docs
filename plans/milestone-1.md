@@ -2,7 +2,7 @@
 
 The plan for the first implementation milestone: what it builds in each repo, how the code is laid out, the order of work, and when it's done. The issues come from this plan in a separate step, and the GitHub milestone is named **Milestone 1**. Once the issues exist, they are the source of truth and this plan is history.
 
-**Status:** brainstormed with Filip on 2026-11-19. Labels follow the docs rules: **DECIDED**, **DEFAULT**, **OPEN**, **CALL**.
+**Status:** brainstormed with Filip on 2026-11-19. **Revised the same day:** real sandboxes are tested on a Hetzner test VM with the Sysbox provider instead of a Lima VM on the Mac ([ADR 0004 §5](../adr/0004-node-machines-in-the-sandbox.md#5-development-and-testing-call-revised-2026-11-19)). The QEMU provider and the template move after Milestone 1, to sandbox#18 and sandbox#19, so §4's `sbx create` walkthrough shows the later QEMU path; on the test VM, the Sysbox provider starts a workstation container instead of a VM. The sandbox issues are the source of truth. Labels follow the docs rules: **DECIDED**, **DEFAULT**, **OPEN**, **CALL**.
 
 **Inputs:** [ARCHITECTURE](../ARCHITECTURE.md), [FEATURES](../FEATURES.md), [ADR 0002](../adr/0002-learner-driven-scenarios-and-scale-target.md), [ADR 0003](../adr/0003-course-vm-hosting.md), [ADR 0004](../adr/0004-node-machines-in-the-sandbox.md), the [schema plan](schema-v0.1.md) and contracts `v0.1.1`, the lab interface design, and the scaffolds in `sandbox`, `api` and `web`.
 
@@ -14,7 +14,7 @@ The plan for the first implementation milestone: what it builds in each repo, ho
 
 | Half | Who | Ends with |
 |---|---|---|
-| **The real sandbox** | Filip | `sbx` creates a real sandbox on the Mac (a Lima VM with nested virtualization), its three nodes come up, and commands run on the workstation and on each node through the harness. |
+| **The real sandbox** | Filip | `sbx` creates a real sandbox on the Hetzner test VM through the Sysbox provider, its three nodes come up, and commands run on the workstation and on each node through the harness. |
 | **The lab on the fake** | Person 2 and Person 3 | In the browser you sign in with a name, start a blank cluster, and watch the fake cluster on the canvas update live. |
 
 - The two halves meet at `ISandboxSession`. `api` builds against `FakeSandboxSession` in Milestone 1 and switches to the real `SandboxSession` in Milestone 2.
@@ -47,7 +47,7 @@ The plan for the first implementation milestone: what it builds in each repo, ho
 |---|---|---|
 | Sign-in | Name only, behind `IAuthProvider`. The name is the account: the same name signs in to the same account. A sturdier mechanism is planned later. | DECIDED |
 | libvirt | `envmgr` writes domain XML and runs `virsh`, with no native bindings | DECIDED |
-| Testing envmgr, harness and client together | A process provider runs the harness as a plain process, so PR CI tests the relay, `Hello`, exec and redials with no VM. Real VMs are tested by hand on Lima. | DECIDED |
+| Testing envmgr, harness and client together | A process provider runs the harness as a plain process, so PR CI tests the relay, `Hello`, exec and redials with no VM. Real sandboxes are tested by hand on the test VM. | DECIDED |
 | `sandbox` releases | On every `feat` or `fix` merge, like `contracts`: the version comes from the PR title, and CI tags and publishes. `api` bumps `SandboxClient` by hand for now. | DECIDED |
 | .NET tests | xUnit v3 | DECIDED |
 | `api` database tests | A real Postgres through Testcontainers | DECIDED |
@@ -57,7 +57,7 @@ The plan for the first implementation milestone: what it builds in each repo, ho
 | The Live lab's first data | The `api` socket on the fake comes first, and `web` builds against it. One fake, in C#. | DECIDED |
 | Scripts | Each repo keeps its scripts in `scripts/`. Tool configs, `.github/`, the Dockerfile and `platform`'s `deploy/`, `lint/` and `dev/` stay where they are. | DECIDED |
 | Web tests | Vitest, with Playwright later | CALL |
-| Mac dev loop | `envmgr` and the harness build and run inside the Lima VM, with the repo mounted writable | CALL |
+| Real sandboxes | Tested on a Hetzner test VM in the tailnet, through the Sysbox provider, until the course VM arrives. Local machines run no VMs. | DECIDED |
 
 **Not decided here, because Milestone 1 doesn't need them:** the deploy format (nothing deploys to the course VM yet), the LLM provider and the helper budget (the helper is later).
 
@@ -90,7 +90,8 @@ src/
     Lifecycle/SandboxRegistry.cs          what exists, from the provider; re-adoption after a restart
     Lifecycle/StateStore.cs               StateDir: token hashes and IP leases, one file per sandbox
     Providers/ISandboxProvider.cs
-    Providers/Qemu/                       QemuProvider, Virsh, DomainXml, CloudInitWriter
+    Providers/Sysbox/SysboxProvider.cs    the test VM now, and the course VM's fallback
+    Providers/Qemu/                       QemuProvider, Virsh, DomainXml, CloudInitWriter: after Milestone 1
     Providers/Process/ProcessProvider.cs  tests and quick local runs: the harness as a plain process
   KubernetesLearning.Harness/             Native AOT
     Program.cs, HarnessHost.cs            reads harness.env, dials with backoff, sends Hello
@@ -101,9 +102,9 @@ src/
   KubernetesLearning.Sbx/                 create | list | exec | watch | destroy
 images/
   node/                                   Dockerfile: systemd, sshd, k3s with its airgap images
-  base/                                   Packer, QEMU builder: the sandbox VM template
-dev/lima.yaml                             the Lima VM: vz, nested virtualization, libvirt, the SDK
-scripts/                                  building the node image and the template, setting up the Lima VM
+  workstation/                            the workstation container: learner and harness users, limits
+  base/                                   Packer, QEMU builder: the sandbox VM template, after Milestone 1
+scripts/                                  building the images, setting up the test VM
 tests/
   SandboxClient.Tests/  Harness.Tests/  EnvManager.Tests/
   Integration.Tests/                      envmgr + harness + SandboxClient on the process provider
@@ -151,13 +152,15 @@ Message types are the contracts' types. `api` creates sessions through a small f
 ### The node image and the template
 
 - **Node image** (`images/node/`): Ubuntu with systemd, openssh-server and k3s. k3s's own images come from its airgap tarball, so nothing is pulled at runtime. `cp` runs the `k3s` server unit, and `w1` and `w2` run `k3s-agent`. The cluster is created at boot in Milestone 1. Baking it into the template is a later speed-up (CALL).
-- **Template** (`images/base/`): Packer with the QEMU builder from an Ubuntu LTS cloud image (CALL: 24.04, if Sysbox supports it), built for arm64 in the Lima VM and for x64 on the course VM later. It contains Docker, Sysbox, kubectl, the harness, the node image, the `learner` and `harness` users with the rights from ADR 0004 §3, and the units that start the nodes and the harness.
-- **Sandbox network:** on Lima, a libvirt network with no forwarding, so a sandbox reaches only the host's address. The nftables rules come with platform#10 on the course VM (CALL).
+- **Template** (`images/base/`): Packer with the QEMU builder from an Ubuntu LTS cloud image (CALL: 24.04, if Sysbox supports it), built for x64 on the course VM once it has KVM (sandbox#18). It contains Docker, Sysbox, kubectl, the harness, the node image, the `learner` and `harness` users with the rights from ADR 0004 §3, and the units that start the nodes and the harness.
+- **Workstation image** (`images/workstation/`): the workstation as a Sysbox container for the Sysbox provider, with the `learner` and `harness` users, the rights from ADR 0004 §3 and the limits. The template reuses its setup script later.
+- **Sandbox network:** on the test VM, each session gets its own Docker network that reaches only `envmgr`'s harness endpoint (CALL).
 
-### Lima on the Mac
+### The test VM
 
-- `dev/lima.yaml`: `vmType: vz`, `nestedVirtualization: true`, 4 CPUs, about 8 GB of memory, with libvirt, QEMU, Packer, Docker and the .NET 10 SDK, and the repo mounted writable (CALL).
-- **The first step of the real-sandbox work is the check itself:** start the VM and confirm `/dev/kvm` (ADR 0004 §5). It downloads Lima's Ubuntu image, about 980 MB, so it waits for Filip's OK. If it fails, the real-sandbox half is replanned before anything else in it is built.
+- Filip's Hetzner cloud VM, in the tailnet, with Docker and Sysbox from `scripts/setup-test-vm.sh` (sandbox#11). It has no KVM, so it runs the Sysbox path ([ADR 0004 §5](../adr/0004-node-machines-in-the-sandbox.md#5-development-and-testing-call-revised-2026-11-19)).
+- It's for the team's testing only. Its sandboxes share its kernel, so nothing else of value runs on it, and only SSH and Tailscale reach it.
+- The node image is the first thing tested there (sandbox#12), because everything after it depends on Sysbox running systemd, sshd and k3s.
 
 ## 5. `api` (Person 2 and Person 3, by feature)
 
@@ -263,7 +266,7 @@ Three tracks run in parallel. Arrows are hard dependencies.
 
 | Track | Order |
 |---|---|
-| **Filip** | 1. Dev Compose with Caddy, and CI test steps → 2. release versioning, `sandbox-release`, `SandboxClient` with the `steady` fake, and the package grant → 3. harness, `envmgr`, the relay and exec on the process provider, with integration tests and `sbx` → 4. the Lima check, then the node image, the template and `QemuProvider` → 5. re-adoption after restart. `container-publish` fits anywhere; the remaining fake scripts follow the Live lab. |
+| **Filip** | 1. Dev Compose with Caddy, and CI test steps → 2. release versioning, `sandbox-release`, `SandboxClient` with the `steady` fake, and the package grant → 3. harness, `envmgr`, the relay and exec on the process provider, with integration tests and `sbx` → 4. the test VM, then the node image, the workstation image, node targets and the `SysboxProvider` → 5. re-adoption after restart. `container-publish` fits anywhere; the remaining fake scripts follow the Live lab. |
 | **Sign-in and sessions** | 1. `api` skeleton: EF, Postgres, the first migration, proto JSON, `/healthz` → 2. name-only sign-in → 3. sessions and `FakeProvisioner` → 4. `web` shell: MUI, theme, layout, `lib/api.ts` → 5. login and home. Steps 1–3 and step 4 can run side by side. |
 | **Live lab** | 1. `topologyReducer` with tests on fixtures (no dependency) → 2. the `api` socket and `LiveSession` on the fake, broadcasting straight through (needs Filip 2 and Sign-in 1) → 3. persist-then-broadcast and `Resync` → 4. `socket.ts`, `sessionStore` and the status banner (needs Sign-in 4) → 5. the canvas. |
 
@@ -284,7 +287,7 @@ DECIDED with the shape in §1:
 
 ## 10. Done when
 
-- [ ] On the Mac, `sbx create` gives a sandbox whose three nodes are Ready, `sbx exec` runs on the workstation and on each node, and `sbx destroy` leaves nothing behind.
+- [ ] On the test VM, `sbx create` gives a sandbox whose three nodes are Ready, `sbx exec` runs on the workstation and on each node, and `sbx destroy` leaves nothing behind.
 - [ ] Restarting `envmgr` keeps running sandboxes: they're re-adopted, the harness redials, and `sbx exec` works again.
 - [ ] PR CI runs the tests in `sandbox`, `api` and `web`, including envmgr, harness and `SandboxClient` together on the process provider.
 - [ ] A merge to `sandbox` `main` publishes the binaries and `SandboxClient`, and `api` uses that package. A merge to `api` or `web` `main` publishes an image.
@@ -300,7 +303,7 @@ Done in one pass once this plan is accepted, with the rest of the [schema plan's
   - §3.2 and §4.2–4.3: ADR 0004's node machines and providers
   - §4.1: manifests on demand and hints over the socket
   - §7: the trees from this plan, and `scripts/`
-  - §8: local dev on Lima and on the fake, the architectures, and tests in CI
+  - §8: local dev, the test VM, the architectures, and tests in CI
   - §9: the milestones renamed to Milestone N, with Milestone 1 pointing here
   - §10: risks 6 and 10
   - §11: the open questions
@@ -312,7 +315,6 @@ Done in one pass once this plan is accepted, with the rest of the [schema plan's
 
 ## 12. Still open
 
-- **Nested virtualization in Lima** on the Mac, checked in Filip's track step 4.
 - **KVM on the course VM** (platform#6), when it arrives.
 - **Real RAM per sandbox** with the node containers (platform#17).
 - **Who takes which feature,** decided when the issues are written.

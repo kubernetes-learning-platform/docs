@@ -258,18 +258,18 @@ No REST controllers. **One gRPC service** on a host address only the stack can r
 - A second sandbox host later is just a second consumer, with no scheduler to write.
 - It uses the official `RabbitMQ.Client` with automatic recovery. The harness never touches the broker, so Native AOT isn't affected.
 
-**QEMU provider** (used if the VM has KVM, and in the Lima dev VM, [ADR 0003 §3](adr/0003-course-vm-hosting.md#3-the-sandbox-type-depends-on-kvm-open-until-checked)):
-- **Template:** a qcow2 image built by Packer with the QEMU builder from `sandbox/images/base/` (Ubuntu, Docker, Sysbox, kubectl, the node image, the harness, every scenario image), by the sandbox-template workflow on the VM for x64 (platform#21) and in the Lima dev VM for arm64.
+**QEMU provider** (used if the course VM has KVM, built after the Sysbox provider, [ADR 0003 §3](adr/0003-course-vm-hosting.md#3-the-sandbox-type-depends-on-kvm-open-until-checked)):
+- **Template:** a qcow2 image built by Packer with the QEMU builder from `sandbox/images/base/` (Ubuntu, Docker, Sysbox, kubectl, the node image, the harness, every scenario image), by the sandbox-template workflow on the course VM (platform#21).
 - **Clone:** a linked clone per sandbox, a qcow2 file backed by the template, so creating one takes seconds. Domains are named `kl-sbx-<id>`, in a dedicated libvirt storage pool.
 - **Identity:** a cloud-init NoCloud seed with a static address on `10.67.0.0/24` and user-data that writes `/etc/kubernetes-learning/harness.env` (sandbox id, token, envmgr URL). Every clone is otherwise identical.
 
-Without KVM, the `SysboxProvider` runs the same node containers directly on the course VM, with a Sysbox workstation container per session ([ADR 0004 §4](adr/0004-node-machines-in-the-sandbox.md#4-without-kvm-decided-as-the-fallback)). Then `envmgr` stops node containers and reports their Docker events itself, because the workstation never gets the course VM's Docker socket.
+Without KVM, the `SysboxProvider` runs the same node containers directly on the course VM, with a Sysbox workstation container per session ([ADR 0004 §4](adr/0004-node-machines-in-the-sandbox.md#4-without-kvm-decided-as-the-fallback)). Then `envmgr` stops node containers and reports their Docker events itself, because the workstation never gets the course VM's Docker socket. The same provider runs the Hetzner test VM, which has no KVM either, so it's built first ([ADR 0004 §5](adr/0004-node-machines-in-the-sandbox.md#5-development-and-testing-call-revised-2026-11-19)).
 
 **Internal services**:
 
 | Area | Classes | Role |
 |---|---|---|
-| Providers | `ISandboxProvider`, `QemuProvider` (the course VM and the Lima dev VM), `SysboxProvider` (the fallback, built only if platform#6 needs it), `ProcessProvider` (tests and quick local runs) | Create / destroy / inspect / list |
+| Providers | `ISandboxProvider`, `SysboxProvider` (the Hetzner test VM now, and the course VM's fallback without KVM), `QemuProvider` (the course VM, once platform#6 confirms KVM), `ProcessProvider` (tests and quick local runs) | Create / destroy / inspect / list |
 | QEMU | `Virsh`, `DomainXml`, `CloudInitWriter` | Defines, starts, stops and deletes domains and their qcow2 overlays through `virsh` and generated domain XML (DECIDED). Writes the per-sandbox cloud-init seed. |
 | Lifecycle | `SandboxRegistry`, `StateStore` (`/var/lib/kubernetes-learning`), `Reconciler` | **One reconcile loop** (CALL). Desired: `WarmPool__Size` idle sandboxes (DEFAULT) plus the ones in use, never more than `Sandbox__MaxConcurrent` in total. Actual: the sandboxes the provider lists. It clones or deletes until they match, deletes sandboxes past `Sandbox__MaxLifetime` (the hard backstop) and sandboxes it has no record of, and re-adopts running sandboxes after a restart (DECIDED). libvirt (or Docker) is the source of truth; `StateStore` keeps only tokens and IP leases. |
 | Queue | `ProvisionConsumer`, `TeardownConsumer` | The work queue above. |
@@ -437,7 +437,7 @@ sandbox/
 │   │   ├── Relay/{HarnessRelay,HarnessWebSocketEndpoint}.cs
 │   │   ├── Providers/ISandboxProvider.cs
 │   │   ├── Providers/Qemu/{QemuProvider,Virsh,DomainXml,CloudInitWriter}.cs
-│   │   ├── Providers/Sysbox/SysboxProvider.cs     # the fallback without KVM, only if platform#6 needs it
+│   │   ├── Providers/Sysbox/SysboxProvider.cs     # the test VM now; the course VM's fallback without KVM
 │   │   ├── Providers/Process/ProcessProvider.cs   # tests and quick local runs: the harness as a plain process
 │   │   ├── Lifecycle/{SandboxRegistry,StateStore,Reconciler}.cs
 │   │   └── Queue/{ProvisionConsumer,TeardownConsumer}.cs
@@ -465,12 +465,12 @@ sandbox/
 │   └── Integration.Tests/                         # envmgr + real harness + SandboxClient on the process provider
 ├── images/
 │   ├── node/                                      # the node machine: systemd, sshd, k3s with its airgap images
-│   ├── base/                                      # Packer (QEMU builder) → the qcow2 sandbox template, x64 and arm64
+│   ├── workstation/                               # the workstation for the Sysbox provider: learner and harness users, limits
+│   ├── base/                                      # Packer (QEMU builder) → the qcow2 sandbox template, once the course VM has KVM
 │   └── scenarios/                                 # custom scenario images, until the `scenarios` repo exists
 │       ├── demo-web/                              # v1, v2; replies with its pod name ("typo tag" = a tag that doesn't exist)
 │       └── traffic-probe/                         # tiny curl loop used by TrafficProbe
-├── dev/lima.yaml                                  # the Lima dev VM with nested virtualization (ADR 0004 §5)
-├── scripts/                                       # node image and template builds, Lima VM setup
+├── scripts/                                       # image builds, test VM setup
 ├── Directory.Build.props
 └── .github/workflows/{ci,release}.yml             # → platform workflows
 ```
@@ -581,7 +581,7 @@ platform/
 
 - **Reusable workflows** live in `platform/.github/workflows`. Each repo's `ci.yml` is a short `uses: kubernetes-learning-platform/platform/.github/workflows/dotnet-ci.yml@main`. `platform` is public, so every repo can call them.
 - **Lint** (CALL): C# uses `.editorconfig` + `dotnet format --verify-no-changes` + `TreatWarningsAsErrors` + `AnalysisLevel=latest-recommended`. TS uses **Biome** for linting and formatting, checked in CI with `biome ci`, plus `tsc --noEmit`. Biome replaces ESLint (DECIDED by Filip) and Prettier (CALL, since Biome formats too). Proto uses `buf lint`. Canonical copies live in `platform/lint/`. Each repo commits its own copies, made by `lint/sync.sh`, which records the `platform` commit and the flags in the repo's `.lint-sync`. The reusable CI compares the copies against `platform` at that commit, so a hand edit fails but a newer `platform` change doesn't block the repo (platform#4). After a change to `lint/` merges, the update bot syncs the code repos (below). `docs` isn't synced and keeps its own `.editorconfig`.
-- **Architectures** (CALL): `envmgr`, the harness and `sbx` publish for **linux-x64 and linux-arm64**, and the node image and scenario images are multi-arch. The `api` and `web` images are multi-arch too. The qcow2 sandbox template builds for x64, for the course VM, and for arm64, for the Lima dev VM on Apple Silicon ([ADR 0004 §5](adr/0004-node-machines-in-the-sandbox.md#5-local-development-on-the-mac-call-not-checked-yet)).
+- **Architectures** (CALL): `envmgr`, the harness and `sbx` publish for **linux-x64 and linux-arm64**, and the node image and scenario images are multi-arch. The `api` and `web` images are multi-arch too. The qcow2 sandbox template is x64-only, for the course VM.
 - **Releases:** every merge to `main` in `api` or `web` publishes an image to GHCR, tagged with the commit SHA (platform#19). Every `feat` or `fix` merge to `sandbox` `main` publishes a release, versioned from the PR title like `contracts`: the `envmgr`, harness and `sbx` binaries and the `SandboxClient` package (DECIDED 2026-11-19, platform#20). `sandbox-template.yml` then builds a new sandbox template with the matching harness baked in. `contracts` publishes on every schema merge (§5). Nothing pulls from the internet at runtime (DECIDED).
 - **Self-hosted runner** (DECIDED, platform#14): one runner on the course VM, as its own user, with its own label, registered only to private repos. Only the deploy workflow and `sandbox-template.yml`, which needs KVM, use it, and both start from the private deploy repo because the code repos are public. Every other workflow stays on GitHub-hosted runners.
 - **No infrastructure code** (CALL, [ADR 0003](adr/0003-course-vm-hosting.md)): the course VM isn't ours to create, so `platform/deploy/vm/install.sh` sets up the base system, Tailscale and libvirt (platform#8 to #10). Packer in `sandbox/images/base/` builds the sandbox template. **Sandboxes themselves are not IaC:** envmgr's reconcile loop owns them, because per-session state files and a plan/apply cycle on every create would be slow and go stale whenever a VM is deleted outside the tool.
@@ -591,13 +591,13 @@ platform/
 - **Public repos** (DECIDED 2026-11-14, platform#27): all six repos are public; only the deploy repo and `.github-private` stay private. Every repo has secret scanning with push protection, Dependabot alerts and security updates, private vulnerability reporting and CodeQL default setup.
 - **Branching** (CALL): trunk-based, short-lived branches named in each issue's `Branch:` line, squash merge, Conventional Commit PR titles. A ruleset on `main` in every repo blocks force-pushes and deletion and requires a PR, a passing `pr-title` check on a branch that is up to date with `main`, and one approval from someone other than the author. `CODEOWNERS` requests Filip's review on every PR, `pr-assign.yml` assigns the author, and repo admins can bypass the ruleset.
 - **Config** is env vars only (DECIDED). For example, api uses `ConnectionStrings__Db`, `RabbitMq__Url`, `Llm__Provider`, `Llm__ApiKey`, `Session__IdleMinutes`, `Agent__TokenBudget`, `Agent__MaxConcurrentTurns`, `Sandbox__Mode=Real|Fake`, `Sandbox__FakeScript`. envmgr uses `Provider=Qemu|Sysbox|Process`, `Grpc__Listen`, `Harness__Listen`, `RabbitMq__Url`, `Libvirt__Uri`, `Qemu__TemplateImage`, `Qemu__StoragePool`, `Sandbox__Subnet`, `Sandbox__MaxConcurrent`, `WarmPool__Size`, `StateDir`, `Sandbox__MaxLifetime`. The harness uses `Harness__Url`, `Harness__SandboxId`, `Harness__Token`.
-- **Tests** (DECIDED 2026-11-19): xUnit v3 for .NET, with `api`'s database tests on a real Postgres through Testcontainers, and Vitest for `web`. `dotnet-ci` and `node-ci` run them on every PR (platform#42). `sandbox`'s integration tests run `envmgr`, the harness and `SandboxClient` together on the process provider; real VMs are tested by hand on the Lima dev VM.
+- **Tests** (DECIDED 2026-11-19): xUnit v3 for .NET, with `api`'s database tests on a real Postgres through Testcontainers, and Vitest for `web`. `dotnet-ci` and `node-ci` run them on every PR (platform#42). `sandbox`'s integration tests run `envmgr`, the harness and `SandboxClient` together on the process provider; real sandboxes are tested by hand on the Hetzner test VM.
 
 ### Local development
 
 | Person | Runs locally |
 |---|---|
-| Filip | A Lima VM on the Mac (`sandbox/dev/lima.yaml`: `vmType: vz`, nested virtualization, about 8 GB) runs `envmgr` with the QEMU provider and one sandbox VM with its Sysbox nodes: the same stack as the course VM ([ADR 0004 §5](adr/0004-node-machines-in-the-sandbox.md#5-local-development-on-the-mac-call-not-checked-yet), CALL until sandbox#11 checks it). The process provider runs the harness as a plain process, for quick runs without VMs. |
+| Filip | No VMs on the Mac. Docker Desktop runs the dev Compose, and `envmgr` with the process provider runs the harness as a plain process, for quick runs. Real sandboxes run on a Hetzner test VM in the tailnet, through the `SysboxProvider` ([ADR 0004 §5](adr/0004-node-machines-in-the-sandbox.md#5-development-and-testing-call-revised-2026-11-19), sandbox#11). |
 | Person 2 and Person 3 | Windows. `platform/dev` Compose runs Postgres and Caddy. `api` (`dotnet run`, port 5149) and `web` (`next dev`, port 3000) run on the host behind Caddy on `localhost:8080`, with the same routes as production. `api` runs with `Sandbox__Mode=Fake`: `FakeSandboxSession` plays a scripted cluster, picked with `Sandbox__FakeScript`, so no broker or sandbox is needed. |
 
 ---
@@ -608,8 +608,8 @@ Milestones are named Milestone 1, Milestone 2 and so on, and each one is planned
 
 | | Filip | Person 2 and Person 3, by feature |
 |---|---|---|
-| **Milestone 1** (planned) | `SandboxClient` and the fake first; `envmgr`, the harness and exec, on the process provider and then a real sandbox VM with Sysbox node machines on the Lima dev VM; re-adoption after restart; tests and releases in CI; the dev Compose | Sign-in and sessions; the live lab on the fake sandbox: the session socket, the event log with `Resync`, the topology canvas |
-| **Milestone 2** (draft) Scenarios | Join the halves: `api` on the real sandbox. Harness PTY, checks and reset; `ScenarioRunner`; the first scenario; RabbitMQ + `jobs.proto`; the `envmgr` consumers and warm pool; the course VM set up, first deploy of the stack | Scenario and progress endpoints, queue integration, `queued` state, PTY plumbing, batched terminal writes, idle reaper; home screen with scenarios, scenario panel (goal, checks, hints, reset), xterm.js terminal, queued state |
+| **Milestone 1** (planned) | `SandboxClient` and the fake first; `envmgr`, the harness and exec, on the process provider and then a real sandbox with Sysbox node machines on the Hetzner test VM, through the `SysboxProvider`; re-adoption after restart; tests and releases in CI; the dev Compose | Sign-in and sessions; the live lab on the fake sandbox: the session socket, the event log with `Resync`, the topology canvas |
+| **Milestone 2** (draft) Scenarios | Join the halves: `api` on the real sandbox. The `QemuProvider` and template if the course VM has KVM. Harness PTY, checks and reset; `ScenarioRunner`; the first scenario; RabbitMQ + `jobs.proto`; the `envmgr` consumers and warm pool; the course VM set up, first deploy of the stack | Scenario and progress endpoints, queue integration, `queued` state, PTY plumbing, batched terminal writes, idle reaper; home screen with scenarios, scenario panel (goal, checks, hints, reset), xterm.js terminal, queued state |
 | **Milestone 3** (draft) Live view | Watchers → `TopologyModel` → snapshot/diff, including Ingress | `TopologyCache` on real data; the real canvas, Monaco inspector + Apply |
 | **Milestone 4** (draft) Helper | Agent loop, `ILlmClient`, tools, `ask_user`, `reset_step`, view tools, fault tools + ledger, token budget | `AgentRunner` in `LiveSession`, `HelperState`, Stop, LLM limits, chat streaming; chat panel with streaming, question card, intent-driven camera and notes on the canvas |
 | **Milestone 5** (draft) Scenarios + scale | `scenarios` repo, the full 3–5 scenarios, CI scenario tests, traffic probe, recorded fallback sessions | Load test, `EventsController`; timeline + replay, traffic animation, polish |
@@ -627,15 +627,15 @@ The core works and can be demonstrated before any LLM work, because the product 
 3. **envmgr restarts break the `Connect` stream.** Flow 10 (reconnect, `SnapshotRequest`, fresh snapshot) has to work from Milestone 1, not as polish. Test it by restarting envmgr in the middle of a scenario.
 4. **Demo day depends on the course VM and on Tailscale.** Test from the venue beforehand and keep a phone hotspot as a backup.
 5. **envmgr runs on the VM host and is the only thing a sandbox can reach.** Users get a real bash in the sandbox, so a bug in the harness endpoint is a host bug, on the same machine as the stack. Keep that endpoint tiny (token check, then frames).
-6. **Nested virtualization is unknown, twice.** Without `/dev/kvm` on the course VM (platform#6), sandboxes fall back to Sysbox node containers and a workstation container on the course VM, sharing its kernel with the stack ([ADR 0004 §4](adr/0004-node-machines-in-the-sandbox.md#4-without-kvm-decided-as-the-fallback)). The Lima dev VM on the Mac is unchecked too (sandbox#11); if it fails, the real-sandbox half of Milestone 1 is replanned. Nested VMs boot slower than on bare metal.
+6. **Nested virtualization is unknown, twice.** Without `/dev/kvm` on the course VM (platform#6), sandboxes fall back to Sysbox node containers and a workstation container on the course VM, sharing its kernel with the stack ([ADR 0004 §4](adr/0004-node-machines-in-the-sandbox.md#4-without-kvm-decided-as-the-fallback)). Until then, real sandboxes are tested on a Hetzner test VM, which has no KVM either, so the QEMU path stays untested until the course VM confirms KVM. Nested VMs boot slower than on bare metal.
 7. **Tailscale start order.** Caddy listens only on the VM's Tailscale address, so whatever runs it must start after Tailscale, or the port binding fails at boot.
 8. **GitHub Packages needs a token to install, even for public packages.** Each person gives the GitHub CLI `read:packages` once and exports `GITHUB_PACKAGES_TOKEN`, which the committed `nuget.config` and `.npmrc` read ([README → The contracts packages](README.md#the-contracts-packages)). CI passes `GITHUB_TOKEN` with `packages: read`, and each consuming repo is granted read access on both packages under **Manage Actions access**; a new consumer needs the same grant, or its restore fails with 403.
 9. **The repos are public.** Everything committed is public at once. Push protection blocks known token formats, but real `.env` files, keys and personal data must never be committed. Commits use Filip's noreply address and are signed.
-10. **Memory on the dev Mac.** It has 16 GB: about 8 GB for the Lima VM, holding one sandbox VM of about 4 GB with three node containers. Measure it in sandbox#11 and sandbox#13.
+10. **Memory on the test VM.** Its RAM caps how many sandboxes it holds. Measure one sandbox there (sandbox#15) before trusting the 3–4 GB estimate.
 11. **RabbitMQ is one more service, and it can be down.** A message published while disconnected is lost, so `api` uses publisher confirms and returns "try again" when the broker can't be reached. Consumers must handle redeliveries. It also shares the VM with the stack and the sandboxes, so measure its memory.
 12. **Checks run real commands in every sandbox.** They run every few seconds, so each one must stay cheap.
 13. **Scenario reset only covers the scenario's namespaces.** Scenarios must keep their resources inside them. Anything else needs **Start over**.
-14. **Sysbox inside a nested VM, and on arm64, is untried.** Check it early, with the node image in the Lima VM (sandbox#12), before the template depends on it.
+14. **Sysbox nodes with systemd, sshd and k3s are untried here.** Check them first, with the node image on the test VM (sandbox#12), before anything depends on them.
 
 ---
 
@@ -653,7 +653,7 @@ Resolved on 2026-11-19 ([plans/milestone-1.md](plans/milestone-1.md)): course re
 
 New:
 - **The scenario list,** and whether Helm is included.
-- **Nested virtualization** on the course VM, which decides the sandbox type (platform#6), and in Lima on the Mac, which decides local development (sandbox#11).
+- **Nested virtualization** on the course VM, which decides the sandbox type (platform#6).
 - **Deploy format:** Docker Compose or a Helm chart on single-node k3s ([ADR 0003 §5](adr/0003-course-vm-hosting.md#5-deploy-format-open)).
 - **Real RAM per sandbox,** which sets `Sandbox__MaxConcurrent` and `WarmPool__Size` for the demo, and how many graders can try at once (platform#17).
 - **Event log retention:** how long to keep `session_events` for finished sessions.

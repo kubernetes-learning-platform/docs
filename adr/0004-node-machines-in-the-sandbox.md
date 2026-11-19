@@ -1,6 +1,6 @@
 # ADR 0004: Cluster nodes are machines inside the sandbox VM
 
-- **Status:** Accepted · 2026-11-19 · **DECIDED** by Filip: the node machines, the workstation, the learner's rights, and the fallback without KVM. Local development on the Mac is a **CALL** until nested virtualization is checked there. Which path the course VM runs stays **OPEN** until platform#6.
+- **Status:** Accepted · 2026-11-19 · **DECIDED** by Filip: the node machines, the workstation, the learner's rights, and the fallback without KVM. Which path the course VM runs stays **OPEN** until platform#6. **Revised** the same day: §5 now tests real sandboxes on a Hetzner test VM through the Sysbox provider, instead of Lima on the Mac (CALL).
 - **Changes:** the k3d cluster inside each sandbox ([ADR 0002](0002-learner-driven-scenarios-and-scale-target.md), [ARCHITECTURE §4.2–4.3](../ARCHITECTURE.md#42-envmgr--net-10-self-contained-daemon-on-the-course-vm--filip), [FEATURES §1](../FEATURES.md#1-your-own-real-cluster-in-one-click)), and the no-KVM column of [ADR 0003 §3](0003-course-vm-hosting.md#3-the-sandbox-type-depends-on-kvm-open-until-checked) with its build order in §4. The KVM column of ADR 0003 §3 still holds: one QEMU/libvirt VM per session. The Docker provider of [ADR 0001](0001-hosting-and-harness-transport.md) is dropped.
 - **Builds on:** contracts `v0.1`, which already models nodes as machines (`Target`, `StopNode`, `StopService`), from the [schema plan](../plans/schema-v0.1.md).
 
@@ -58,19 +58,19 @@ If platform#6 finds no `/dev/kvm` on the course VM, only the outer layer changes
 | **The workstation** | The VM | A Sysbox system container, the learner's shell plus the harness |
 | **The nodes** | Sysbox containers in the VM's Docker | The same node image, as Sysbox containers in the course VM's Docker |
 | **Identity** | cloud-init writes the token | Env vars on the workstation container |
-| **Provider** | `QemuProvider` | `SysboxProvider` (CALL) |
+| **Provider** | `QemuProvider` | `SysboxProvider` (CALL), which is also the test VM's provider (§5) |
 
 - **The accepted risk:** every session shares the course VM's kernel with the other sessions and the stack, as ADR 0003 §3 already said for the container path. A kernel exploit from a node would reach the course VM.
 - The harness in the workstation container must not get the course VM's Docker socket, which would make it root there. So in the fallback, `envmgr` stops node containers and reports their Docker events for the harness (CALL).
 - The isolation rule doesn't change: a session's network reaches only `envmgr`'s harness endpoint.
 
-### 5. Local development on the Mac (CALL, not checked yet)
+### 5. Development and testing (CALL, revised 2026-11-19)
 
-- Lima's documentation says `nestedVirtualization: true` with `vmType: vz` works on Apple M3 or later with macOS 15 or later, and gives the Linux guest `/dev/kvm`. Filip's Mac is an Apple M5 on macOS 27 with 16 GB.
-- So a Lima VM runs `envmgr` with the **QemuProvider** and one sandbox VM with its Sysbox nodes inside: the same stack as the course VM.
-- That needs an **arm64 sandbox template and node image**, so both build for x64 and arm64 (CALL). The course VM uses the x64 ones.
-- RAM: about 8 GB for the Lima VM, holding one sandbox VM of about 4 GB (CALL, to be measured).
-- The rest of the team works on Windows against `FakeSandboxSession`, so nothing they run needs Linux or KVM.
+- **Local machines stay light.** They run Docker Desktop for Postgres and Caddy, the .NET 10 SDK and Node, and no VMs. `envmgr` and the harness run as plain processes through the process provider for quick tests, and `api` runs against `FakeSandboxSession`.
+- **Real sandboxes run on a test VM:** a Hetzner cloud server of Filip's, in the tailnet, until the course VM arrives. Hetzner Cloud has no nested virtualization (checked 2026-11-19: no `/dev/kvm`), so the test VM runs the Sysbox path of §4, which is the course VM's fallback anyway. The node image, the harness and the relay are the same on both paths.
+- **So the `SysboxProvider` comes first.** A real sandbox exists before the course VM does. The `QemuProvider` and the qcow2 template follow once platform#6 confirms KVM on the course VM.
+- **The test VM is for the team's testing only,** never for learners or the demo. Its sandboxes share its kernel, so nothing else of value runs on it, and only SSH and Tailscale reach it. It isn't hosting: ADR 0003's one course VM still runs the stack and the demo.
+- **Considered first and dropped:** a Lima VM with nested virtualization on the Mac (`vmType: vz`, Apple M3 or later). It would take about 8 GB of a 16 GB Mac and an arm64 template, and it was never checked.
 - The Docker provider (Docker-in-Docker with k3d) is dropped. It was the Mac's dev path and the base of the old fallback, and both are replaced. The DinD Compose profile (platform#13) no longer applies.
 
 ## Consequences
@@ -80,13 +80,13 @@ If platform#6 finds no `/dev/kvm` on the course VM, only the outer layer changes
 - Tighter inside the sandbox than k3d: root in a node is no longer root on the VM.
 - A fault on any node can't cut the session off, because the shell and the harness live on the workstation.
 - The node image and the scenarios are the same on both paths, so platform#6 changes only the provider.
-- Local development runs the real provider instead of a separate Docker provider.
+- Real sandboxes are tested on a cheap test VM with the real fallback provider, and local machines run no VMs.
 
 **Costs:**
-- A Sysbox install and a node image join the template, and the template builds for two architectures.
+- A Sysbox install, a node image and a workstation image join the build.
 - The harness learns targets: it runs node commands through ssh and watches the node containers.
-- Two providers to write: `QemuProvider` now, `SysboxProvider` only if platform#6 needs it.
-- Lima nested virtualization is unchecked, and nested VMs boot slower.
+- Two providers to write: `SysboxProvider` first, for the test VM and the fallback, then `QemuProvider` once the course VM has KVM.
+- The QEMU path can't be tested until the course VM confirms KVM, and nested VMs boot slower.
 
 ## Labels changed
 
@@ -98,8 +98,7 @@ If platform#6 finds no `/dev/kvm` on the course VM, only the outer layer changes
 | The node fault | `kill_node` stops a container | `StopNode` stops a container; `StopService` stops a unit (DECIDED, contracts `v0.1`) |
 | Without KVM | A Docker + k3d container per session under Sysbox (OPEN, ADR 0003) | Sysbox nodes and a Sysbox workstation container on the course VM (DECIDED) |
 | Providers | `DockerProvider`, `QemuProvider` | `QemuProvider`, `SysboxProvider` (CALL) |
-| Mac development | `envmgr` with the Docker provider and privileged DinD (CALL) | A Lima VM with nested virtualization running the QEMU provider (CALL) |
-| Template architectures | x64 only (CALL) | x64 and arm64 (CALL) |
+| Development and testing | `envmgr` with the Docker provider and privileged DinD on the Mac (CALL) | Plain processes locally; real sandboxes on a Hetzner test VM through the `SysboxProvider` (CALL) |
 
 ## Alternatives considered
 
@@ -112,5 +111,4 @@ If platform#6 finds no `/dev/kvm` on the course VM, only the outer layer changes
 ## Still OPEN
 
 - KVM on the course VM (platform#6), which decides whether the course VM runs §1–3 or §4.
-- Nested virtualization in Lima on the Mac, which decides §5.
 - Real RAM per sandbox with the node containers (platform#17).
