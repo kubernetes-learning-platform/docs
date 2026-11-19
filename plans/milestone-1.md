@@ -256,9 +256,9 @@ dev/
 
 - `proto-release.yml` calls `release-version.yml` too, so both repos version the same way (CALL).
 - The dev Compose reaches `next dev` and `api` on the host through `host.docker.internal`, which works on Windows and on the Mac (on Linux through `host-gateway`).
-- `api` gets read access to the `SandboxClient` package (platform#24).
+- `api` gets read access to the `SandboxClient` package right after its first release (platform#20; a package can't be granted before it exists).
 - platform#13, the Docker-in-Docker profile, is closed as obsolete (ADR 0004).
-- The images have never been built, so `container-publish` is worth landing early, even though nothing deploys in this milestone.
+- `container-publish` comes at the end of the milestone (Filip, 2026-11-19), since nothing deploys yet. The images have never been built, so expect Dockerfile fixes.
 
 ## 8. Order of work
 
@@ -266,7 +266,7 @@ The setup and then the tracks run in parallel. Arrows are hard dependencies.
 
 | Track | Order |
 |---|---|
-| **Filip** | 1. Dev Compose with Caddy, and CI test steps → 2. release versioning, `sandbox-release`, `SandboxClient` with the `steady` fake, and the package grant → 3. harness, `envmgr`, the relay and exec on the process provider, with integration tests and `sbx` → 4. the test VM, then the node image, the workstation image, node targets and the `SysboxProvider` → 5. re-adoption after restart. `container-publish` fits anywhere; the remaining fake scripts follow the Live lab. |
+| **Filip** | 1. Dev Compose with Caddy, and CI test steps → 2. release versioning, `sandbox-release`, `SandboxClient` with the `steady` fake, and the package grant → 3. harness, `envmgr`, the relay and exec on the process provider, with integration tests and `sbx` → 4. the test VM, then the node image, the workstation image, node targets and the `SysboxProvider` → 5. re-adoption after restart. `container-publish` comes last; the remaining fake scripts follow the Live lab. |
 | **Setup** | Side by side, one person each, before the features: the `api` skeleton (EF, Postgres, proto JSON, `/healthz`, the test setup) and the `web` shell (MUI, theme, layout, `lib/api.ts`, Vitest). Then each person goes on to a feature, which spans both repos. |
 | **Sign-in and sessions** | 1. name-only sign-in → 2. sessions and `FakeProvisioner` → 3. login and home. |
 | **Live lab** | 1. `topologyReducer` with tests on fixtures → 2. the `api` socket and `LiveSession` on the fake, broadcasting straight through (needs Filip 2 and Sign-in 2) → 3. persist-then-broadcast and `Resync` → 4. `socket.ts`, `sessionStore` and the status banner → 5. the canvas. |
