@@ -238,7 +238,7 @@ src/
 - **State:** Zustand stores and pure reducers, so the same reducers serve replay later (CALL, as in ARCHITECTURE).
 - **The canvas** follows the lab design: nodes as lanes holding pod chips, and Deployments, ReplicaSets and Services as boxes, with `OWNS`, `RUNS_ON` and `SELECTS` edges, laid out by elkjs. It draws only from snapshots and diffs.
 - **Tests:** Vitest for the reducers and `lib/`, on small fixture messages. The Live lab can start with the reducer and its tests on fixtures while the `api` socket is being built.
-- **Order between the features:** Sign-in and sessions lands the MUI setup, the theme and the layout first. The lab page builds on them.
+- **Order between the features:** the `web` setup (MUI, the theme, the layout, `lib/api.ts` and Vitest) comes first, side by side with the `api` setup, and both features build on it.
 
 ## 7. `platform` (Filip)
 
@@ -262,13 +262,14 @@ dev/
 
 ## 8. Order of work
 
-Three tracks run in parallel. Arrows are hard dependencies.
+The setup and then the tracks run in parallel. Arrows are hard dependencies.
 
 | Track | Order |
 |---|---|
 | **Filip** | 1. Dev Compose with Caddy, and CI test steps → 2. release versioning, `sandbox-release`, `SandboxClient` with the `steady` fake, and the package grant → 3. harness, `envmgr`, the relay and exec on the process provider, with integration tests and `sbx` → 4. the test VM, then the node image, the workstation image, node targets and the `SysboxProvider` → 5. re-adoption after restart. `container-publish` fits anywhere; the remaining fake scripts follow the Live lab. |
-| **Sign-in and sessions** | 1. `api` skeleton: EF, Postgres, the first migration, proto JSON, `/healthz` → 2. name-only sign-in → 3. sessions and `FakeProvisioner` → 4. `web` shell: MUI, theme, layout, `lib/api.ts` → 5. login and home. Steps 1–3 and step 4 can run side by side. |
-| **Live lab** | 1. `topologyReducer` with tests on fixtures (no dependency) → 2. the `api` socket and `LiveSession` on the fake, broadcasting straight through (needs Filip 2 and Sign-in 1) → 3. persist-then-broadcast and `Resync` → 4. `socket.ts`, `sessionStore` and the status banner (needs Sign-in 4) → 5. the canvas. |
+| **Setup** | Side by side, one person each, before the features: the `api` skeleton (EF, Postgres, proto JSON, `/healthz`, the test setup) and the `web` shell (MUI, theme, layout, `lib/api.ts`, Vitest). Then each person goes on to a feature, which spans both repos. |
+| **Sign-in and sessions** | 1. name-only sign-in → 2. sessions and `FakeProvisioner` → 3. login and home. |
+| **Live lab** | 1. `topologyReducer` with tests on fixtures → 2. the `api` socket and `LiveSession` on the fake, broadcasting straight through (needs Filip 2 and Sign-in 2) → 3. persist-then-broadcast and `Resync` → 4. `socket.ts`, `sessionStore` and the status banner → 5. the canvas. |
 
 Filip's steps 1 and 2 unblock everyone, so they go first.
 
