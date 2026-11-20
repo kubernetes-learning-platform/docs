@@ -2,7 +2,7 @@
 
 The plan for the first implementation milestone: what it builds in each repo, how the code is laid out, the order of work, and when it's done. The issues come from this plan in a separate step, and the GitHub milestone is named **Milestone 1**. Once the issues exist, they are the source of truth and this plan is history.
 
-**Status:** brainstormed with Filip on 2026-11-19. **Revised the same day:** real sandboxes are tested on a Hetzner test VM with the Sysbox provider instead of a Lima VM on the Mac ([ADR 0004 §5](../adr/0004-node-machines-in-the-sandbox.md#5-development-and-testing-call-revised-2026-11-19)). The QEMU provider and the template move after Milestone 1, to sandbox#18 and sandbox#19, so §4's `sbx create` walkthrough shows the later QEMU path; on the test VM, the Sysbox provider starts a workstation container instead of a VM. The sandbox issues are the source of truth. Labels follow the docs rules: **DECIDED**, **DEFAULT**, **OPEN**, **CALL**.
+**Status:** brainstormed with Filip on 2026-11-19. **Revised the same day:** real sandboxes are tested on a Hetzner test VM with the Sysbox provider instead of a Lima VM on the Mac ([ADR 0004 §5](../adr/0004-node-machines-in-the-sandbox.md#5-development-and-testing-call-revised-2026-11-19)). The QEMU provider and the template move after Milestone 1, to sandbox#18 and sandbox#19, so §4's `sbx create` walkthrough shows the later QEMU path; on the test VM, the Sysbox provider starts a workstation container instead of a VM. The sandbox issues are the source of truth. **Revised 2026-11-20:** all test coverage moves out of Milestone 1, to Milestone 2 or 3 (§3, §9). Labels follow the docs rules: **DECIDED**, **DEFAULT**, **OPEN**, **CALL**.
 
 **Inputs:** [ARCHITECTURE](../ARCHITECTURE.md), [FEATURES](../FEATURES.md), [ADR 0002](../adr/0002-learner-driven-scenarios-and-scale-target.md), [ADR 0003](../adr/0003-course-vm-hosting.md), [ADR 0004](../adr/0004-node-machines-in-the-sandbox.md), the [schema plan](schema-v0.1.md) and contracts `v0.1.1`, the lab interface design, and the scaffolds in `sandbox`, `api` and `web`.
 
@@ -47,8 +47,9 @@ The plan for the first implementation milestone: what it builds in each repo, ho
 |---|---|---|
 | Sign-in | Name only, behind `IAuthProvider`. The name is the account: the same name signs in to the same account. A sturdier mechanism is planned later. | DECIDED |
 | libvirt | `envmgr` writes domain XML and runs `virsh`, with no native bindings | DECIDED |
-| Testing envmgr, harness and client together | A process provider runs the harness as a plain process, so PR CI tests the relay, `Hello`, exec and redials with no VM. Real sandboxes are tested by hand on the test VM. | DECIDED |
+| Testing envmgr, harness and client together | A process provider runs the harness as a plain process, for quick local runs now. Once tests start, PR CI uses it to test the relay, `Hello`, exec and redials with no VM. Real sandboxes are tested by hand on the test VM. | DECIDED |
 | `sandbox` releases | On every `feat` or `fix` merge, like `contracts`: the version comes from the PR title, and CI tags and publishes. `api` bumps `SandboxClient` by hand for now. | DECIDED |
+| Tests | Not in Milestone 1: no test projects and no test steps in CI (Filip, 2026-11-20). They come in Milestone 2 or 3, settled when Milestone 2 is planned (OPEN). The frameworks below stay decided for then. | DECIDED |
 | .NET tests | xUnit v3 | DECIDED |
 | `api` database tests | A real Postgres through Testcontainers | DECIDED |
 | `web` data | Fetched in the browser only. Pages are client components calling same-origin `/api` and `/ws`, and the Next server never calls `api`. | DECIDED |
@@ -92,7 +93,7 @@ src/
     Providers/ISandboxProvider.cs
     Providers/Sysbox/SysboxProvider.cs    the test VM now, and the course VM's fallback
     Providers/Qemu/                       QemuProvider, Virsh, DomainXml, CloudInitWriter: after Milestone 1
-    Providers/Process/ProcessProvider.cs  tests and quick local runs: the harness as a plain process
+    Providers/Process/ProcessProvider.cs  quick local runs, and tests later: the harness as a plain process
   KubernetesLearning.Harness/             Native AOT
     Program.cs, HarnessHost.cs            reads harness.env, dials with backoff, sends Hello
     Transport/{IHarnessTransport,WebSocketTransport}.cs
@@ -105,7 +106,7 @@ images/
   workstation/                            the workstation container: learner and harness users, limits
   base/                                   Packer, QEMU builder: the sandbox VM template, after Milestone 1
 scripts/                                  building the images, setting up the test VM
-tests/
+tests/                                    Milestone 2 or 3, not Milestone 1
   SandboxClient.Tests/  Harness.Tests/  EnvManager.Tests/
   Integration.Tests/                      envmgr + harness + SandboxClient on the process provider
 ```
@@ -182,7 +183,7 @@ src/KubernetesLearning.Api/
   Realtime/TopologyCache.cs
   Sessions/{SessionRegistry,LiveSession}.cs
   Persistence/EventStore.cs, Entities/SessionEvent.cs
-tests/Api.Tests/                      unit tests, and WebApplicationFactory tests on Testcontainers Postgres
+tests/Api.Tests/                      Milestone 2 or 3: unit tests, and WebApplicationFactory tests on Testcontainers Postgres
 ```
 
 ### Sign-in and sessions
@@ -237,14 +238,13 @@ src/
 - **MUI:** `AppRouterCacheProvider` from `@mui/material-nextjs` and a `ThemeProvider` in the root layout, as MUI's Next.js guide shows. The first web issue confirms it works with `cacheComponents` and standalone output.
 - **State:** Zustand stores and pure reducers, so the same reducers serve replay later (CALL, as in ARCHITECTURE).
 - **The canvas** follows the lab design: nodes as lanes holding pod chips, and Deployments, ReplicaSets and Services as boxes, with `OWNS`, `RUNS_ON` and `SELECTS` edges, laid out by elkjs. It draws only from snapshots and diffs.
-- **Tests:** Vitest for the reducers and `lib/`, on small fixture messages. The Live lab can start with the reducer and its tests on fixtures while the `api` socket is being built.
-- **Order between the features:** the `web` setup (MUI, the theme, the layout, `lib/api.ts` and Vitest) comes first, side by side with the `api` setup, and both features build on it.
+- **Tests:** none in Milestone 1. When they start, in Milestone 2 or 3, Vitest covers the reducers and `lib/`, on small fixture messages. The Live lab can still start with the reducer on fixture messages while the `api` socket is being built.
+- **Order between the features:** the `web` setup (MUI, the theme, the layout and `lib/api.ts`) comes first, side by side with the `api` setup, and both features build on it.
 
 ## 7. `platform` (Filip)
 
 ```
 .github/workflows/
-  dotnet-ci.yml, node-ci.yml   + test steps: dotnet test (xUnit v3; Testcontainers uses the runner's Docker), vitest run
   release-version.yml          + the job that picks the version from the commit subject, moved out of proto-release
   sandbox-release.yml          + harness as Native AOT on x64 and arm64 runners, envmgr and sbx self-contained,
                                  a GitHub Release, and the SandboxClient package
@@ -255,6 +255,7 @@ dev/
 ```
 
 - `proto-release.yml` calls `release-version.yml` too, so both repos version the same way (CALL).
+- The test steps in `dotnet-ci` and `node-ci` (platform#42: `dotnet test` with xUnit v3, Testcontainers on the runner's Docker, and `vitest run`) move to Milestone 2 or 3 with the tests.
 - The dev Compose reaches `next dev` and `api` on the host through `host.docker.internal`, which works on Windows and on the Mac (on Linux through `host-gateway`).
 - `api` gets read access to the `SandboxClient` package right after its first release (platform#20; a package can't be granted before it exists).
 - platform#13, the Docker-in-Docker profile, is closed as obsolete (ADR 0004).
@@ -266,10 +267,10 @@ The setup and then the tracks run in parallel. Arrows are hard dependencies.
 
 | Track | Order |
 |---|---|
-| **Filip** | 1. Dev Compose with Caddy, and CI test steps → 2. release versioning, `sandbox-release`, `SandboxClient` with the `steady` fake, and the package grant → 3. harness, `envmgr`, the relay and exec on the process provider, with integration tests and `sbx` → 4. the test VM, then the node image, the workstation image, node targets and the `SysboxProvider` → 5. re-adoption after restart. `container-publish` comes last; the remaining fake scripts follow the Live lab. |
-| **Setup** | Side by side, one person each, before the features: the `api` skeleton (EF, Postgres, proto JSON, `/healthz`, the test setup) and the `web` shell (MUI, theme, layout, `lib/api.ts`, Vitest). Then each person goes on to a feature, which spans both repos. |
+| **Filip** | 1. Dev Compose with Caddy → 2. release versioning, `sandbox-release`, `SandboxClient` with the `steady` fake, and the package grant → 3. harness, `envmgr`, the relay and exec on the process provider, and `sbx` → 4. the test VM, then the node image, the workstation image, node targets and the `SysboxProvider` → 5. re-adoption after restart. `container-publish` comes last; the remaining fake scripts follow the Live lab. |
+| **Setup** | Side by side, one person each, before the features: the `api` skeleton (EF, Postgres, proto JSON, `/healthz`) and the `web` shell (MUI, theme, layout, `lib/api.ts`). Then each person goes on to a feature, which spans both repos. |
 | **Sign-in and sessions** | 1. name-only sign-in → 2. sessions and `FakeProvisioner` → 3. login and home. |
-| **Live lab** | 1. `topologyReducer` with tests on fixtures → 2. the `api` socket and `LiveSession` on the fake, broadcasting straight through (needs Filip 2 and Sign-in 2) → 3. persist-then-broadcast and `Resync` → 4. `socket.ts`, `sessionStore` and the status banner → 5. the canvas. |
+| **Live lab** | 1. `topologyReducer` on fixture messages → 2. the `api` socket and `LiveSession` on the fake, broadcasting straight through (needs Filip 2 and Sign-in 2) → 3. persist-then-broadcast and `Resync` → 4. `socket.ts`, `sessionStore` and the status banner → 5. the canvas. |
 
 Filip's steps 1 and 2 unblock everyone, so they go first.
 
@@ -286,11 +287,14 @@ DECIDED with the shape in §1:
 - deploying to the course VM, and with it the deploy format
 - replay and the timeline
 
+Moved out on 2026-11-20 (DECIDED by Filip), to Milestone 2 or 3:
+
+- all test coverage: the test projects in `sandbox`, `api` and `web`, the integration tests on the process provider, and the test steps in CI (platform#42)
+
 ## 10. Done when
 
 - [ ] On the test VM, `sbx create` gives a sandbox whose three nodes are Ready, `sbx exec` runs on the workstation and on each node, and `sbx destroy` leaves nothing behind.
 - [ ] Restarting `envmgr` keeps running sandboxes: they're re-adopted, the harness redials, and `sbx exec` works again.
-- [ ] PR CI runs the tests in `sandbox`, `api` and `web`, including envmgr, harness and `SandboxClient` together on the process provider.
 - [ ] A merge to `sandbox` `main` publishes the binaries and `SandboxClient`, and `api` uses that package. A merge to `api` or `web` `main` publishes an image.
 - [ ] On `localhost:8080`, on Windows and on the Mac: sign in with a name, start a blank cluster, watch the lab go from starting to live, and see the canvas draw the fake cluster and follow its script. A second tab shows the same thing. A reload catches up from the event log. Ending the session from home works.
 - [ ] The docs describe what was built.
